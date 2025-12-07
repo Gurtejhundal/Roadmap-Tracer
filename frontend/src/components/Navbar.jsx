@@ -17,7 +17,6 @@ export default function Navbar() {
         <nav className="navbar-custom">
             {/* Left: User Profile */}
             <div className="nav-left">
-                <img src="/logo.jpg" alt="TRAQO Logo" className="navbar-logo" style={{ height: '32px', marginRight: '1rem', borderRadius: '50%' }} />
                 <div className="profile-wrapper">
                     <UserButton afterSignOutUrl="/login" />
                     <span className="profile-label">Profile</span>
