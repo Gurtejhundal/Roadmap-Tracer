@@ -28,27 +28,6 @@ Roadmap Tracer is a modern, minimalist application designed to help you plan, tr
 - Node.js (v18+)
 - Python (v3.10+)
 
-### Installation
-
-1.  **Clone the repo**
-    ```bash
-    git clone https://github.com/Gurtejhundal/Roadmap-Tracer.git
-    cd Roadmap-Tracer
-    ```
-
-2.  **Frontend Setup**
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
-
-3.  **Backend Setup**
-    ```bash
-    cd backend
-    pip install -r requirements.txt
-    uvicorn main:app --reload
-    ```
 # Roadmap Tracer 🗺️
 
 **Architect your dreams. Execute. Repeat.**
