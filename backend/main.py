@@ -6,7 +6,7 @@ import roadmap_parser as parser
 from models import RoadmapCreate, RoadmapUpdate, RoadmapResponse, TaskUpdate, RoadmapNameUpdate, TimeframeDateUpdate, RoadmapImport
 
 
-app = FastAPI(title="Roadmap Tracer API")
+app = FastAPI(title="TRAQO API")
 
 # Configure CORS
 app.add_middleware(
@@ -34,7 +34,7 @@ def startup_event():
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Roadmap Tracer API"}
+    return {"message": "Welcome to TRAQO API"}
 
 @app.post("/roadmaps", response_model=dict)
 @app.post("/roadmaps", response_model=dict)

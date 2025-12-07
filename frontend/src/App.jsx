@@ -51,7 +51,7 @@ function App() {
                             <SignedIn>
                                 <div className="app-container">
                                     <DustEffect />
-                                    <h1 className="app-title">Roadmap Tracer</h1>
+                                    <h1 className="app-title">TRAQO</h1>
                                     <Navbar />
                                     <div className="content-container">
                                         <AnimatedRoutes />

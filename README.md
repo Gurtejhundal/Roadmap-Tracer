@@ -1,8 +1,8 @@
-# Roadmap Tracer 🗺️
+# TRAQO 🗺️
 
 **Architect your dreams. Execute. Repeat.**
 
-Roadmap Tracer is a modern, minimalist application designed to help you plan, track, and execute your learning roadmaps and projects. With a sleek "Void Zenith" aesthetic, it combines powerful task management with a distraction-free environment.
+TRAQO is a modern, minimalist application designed to help you plan, track, and execute your learning roadmaps and projects. With a sleek "Void Zenith" aesthetic, it combines powerful task management with a distraction-free environment.
 
 ![Roadmap Tracer](https://via.placeholder.com/800x400.png?text=Roadmap+Tracer+Preview) 
 *(Add your own screenshot here after deployment!)*

@@ -27,7 +27,7 @@ export default function Login() {
                     transition={{ duration: 0.8 }}
                     className="brand-header"
                 >
-                    <h1 className="brand-title">Roadmap Tracer</h1>
+                    <h1 className="brand-title">TRAQO</h1>
                     <p className="brand-subtitle">Your roadmap won’t fix your laziness. You will.</p>
                 </motion.div>
 
