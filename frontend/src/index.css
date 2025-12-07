@@ -1057,20 +1057,7 @@ body.theme-air .status-badge.status-current,
 body.theme-air .status-badge.status-upcoming {
     background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    background-image: none;
-}
-
-body.theme-air .btn-primary:hover,
-body.theme-air .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: #fff;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-}
-
-body.theme-air .status-badge.status-current {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #fff;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    background-image: none !important;
 }
 
 /* Professional Air: Breeze Glow */
