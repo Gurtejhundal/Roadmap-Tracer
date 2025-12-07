@@ -833,12 +833,31 @@ canvas {
 }
 
 .status-badge {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.8rem;
     border-radius: 12px;
     font-weight: 600;
-    text-transform: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: white;
+    background: var(--muted);
+    border: 1px solid transparent;
+}
+
+.status-badge.status-current {
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.status-badge.status-upcoming {
+    background: #3b82f6;
+    /* Blue default */
+}
+
+.status-badge.status-passed {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+    border-color: var(--border);
 }
 
 .date-inputs {
@@ -995,14 +1014,15 @@ body.theme-air {
 }
 
 /* Ensure icons and specific text elements pop in Air theme */
-body.theme-air .navbar .theme-btn {
+body.theme-air .navbar-custom .theme-btn {
     color: rgba(255, 255, 255, 0.6);
 }
 
-body.theme-air .navbar .theme-btn.active {
+body.theme-air .navbar-custom .theme-btn.active {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 body.theme-air .section-title {
@@ -1015,7 +1035,8 @@ body.theme-air .section-title {
 
 /* Fix Button Visibility in Air Theme */
 body.theme-air .btn-primary,
-body.theme-air .btn-secondary {
+body.theme-air .btn-secondary,
+body.theme-air .status-badge {
     border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
@@ -1025,6 +1046,12 @@ body.theme-air .btn-secondary {
 body.theme-air .btn-primary:hover,
 body.theme-air .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.25);
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+body.theme-air .status-badge.status-current {
+    background: rgba(255, 255, 255, 0.2);
     border-color: #fff;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
@@ -1039,10 +1066,8 @@ body.theme-air .custom-checkbox.checked {
     background: rgba(255, 255, 255, 0.2);
     border-color: #fff;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-    /* Clean white glow */
 }
 
 body.theme-air .custom-checkbox::before {
     display: none;
-    /* Simplify */
 }

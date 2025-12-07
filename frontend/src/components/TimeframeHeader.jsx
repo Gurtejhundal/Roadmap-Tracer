@@ -32,15 +32,15 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
     const end = endDate ? new Date(endDate) : null
 
     let status = 'Upcoming'
-    let statusColor = 'bg-blue-500' // tailwind-like classes won't work without tailwind, using style object or css classes
+    let statusClass = 'status-upcoming'
 
     if (start && end) {
         if (now >= start && now <= end) {
             status = 'Current'
-            statusColor = 'var(--primary)'
+            statusClass = 'status-current'
         } else if (now > end) {
             status = 'Passed'
-            statusColor = 'var(--muted)'
+            statusClass = 'status-passed'
         }
     }
 
@@ -49,22 +49,10 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
             <div className="timeframe-header-main">
                 <h3 className="timeframe-label" onClick={() => setIsExpanded(!isExpanded)} style={{ cursor: 'pointer' }}>
                     {timeframe.label}
-                    {/* We can add chevron here if we want collapsible logic in parent, 
-                       but parent manages the rendering of tasks? 
-                       Actually parent renders tasks *inside* the group mapping, so checking `RoadmapView`...
-                       Wait, `RoadmapView` maps `groupedTasks`. 
-                       It renders `TimeframeHeader` then `tasks-list`. 
-                       It does NOT wrap tasks-list inside TimeframeHeader children.
-                       So `isExpanded` here won't hide tasks unless we lift state up.
-                       For now, let's just make it a header.
-                   */}
                 </h3>
 
                 <div className="header-actions">
-                    <span
-                        className="status-badge"
-                        style={{ backgroundColor: statusColor }}
-                    >
+                    <span className={`status-badge ${statusClass}`}>
                         {status}
                     </span>
                     <button
