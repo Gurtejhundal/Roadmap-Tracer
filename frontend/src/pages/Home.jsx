@@ -6,17 +6,24 @@ import { Plus, Calendar, ArrowRight, Trash2 } from 'lucide-react'
 
 import { API_URL } from '../config'
 
+import { useAuth } from '@clerk/clerk-react'
+
 export default function Home() {
+    const { userId, isLoaded } = useAuth()
     const [roadmaps, setRoadmaps] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetchRoadmaps()
-    }, [])
+        if (isLoaded && userId) {
+            fetchRoadmaps()
+        }
+    }, [isLoaded, userId])
 
     const fetchRoadmaps = async () => {
         try {
-            const res = await axios.get(`${API_URL}/roadmaps/`)
+            const res = await axios.get(`${API_URL}/roadmaps/`, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
             setRoadmaps(res.data)
         } catch (error) {
             console.error("Failed to fetch roadmaps", error)
@@ -30,7 +37,9 @@ export default function Home() {
         if (!window.confirm("Are you sure you want to delete this roadmap?")) return
 
         try {
-            await axios.delete(`${API_URL}/roadmaps/${id}`)
+            await axios.delete(`${API_URL}/roadmaps/${id}`, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
             setRoadmaps(roadmaps.filter(r => r.id !== id))
         } catch (error) {
             console.error("Failed to delete roadmap", error)

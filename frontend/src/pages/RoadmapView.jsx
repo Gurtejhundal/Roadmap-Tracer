@@ -12,8 +12,10 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx'
 import { saveAs } from 'file-saver'
 
 import { API_URL } from '../config'
+import { useAuth } from '@clerk/clerk-react'
 
 export default function RoadmapView() {
+    const { userId } = useAuth()
     const { id } = useParams()
     const navigate = useNavigate()
     const [tasks, setTasks] = useState([])
@@ -58,7 +60,9 @@ export default function RoadmapView() {
     const toggleTask = async (taskId, currentStatus) => {
         setTasks(tasks.map(t => t.id === taskId ? { ...t, is_done: !currentStatus } : t))
         try {
-            await axios.put(`${API_URL}/tasks/${taskId}/status`, { is_done: !currentStatus })
+            await axios.put(`${API_URL}/tasks/${taskId}/status`, { is_done: !currentStatus }, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
         } catch (error) {
             console.error("Failed to update task", error)
             setTasks(tasks.map(t => t.id === taskId ? { ...t, is_done: currentStatus } : t))
@@ -68,7 +72,9 @@ export default function RoadmapView() {
     const saveName = async () => {
         if (!newName.trim()) return
         try {
-            await axios.put(`${API_URL}/roadmaps/${id}/name`, { name: newName })
+            await axios.put(`${API_URL}/roadmaps/${id}/name`, { name: newName }, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
             setRoadmap({ ...roadmap, name: newName })
             setIsEditingName(false)
         } catch (error) {

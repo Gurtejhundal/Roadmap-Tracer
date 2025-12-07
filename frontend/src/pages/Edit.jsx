@@ -5,8 +5,10 @@ import { Save, ArrowLeft, FileText, Sparkles } from 'lucide-react'
 import { parseRoadmapText, formatRoadmapToText } from '../utils/roadmapParser'
 
 import { API_URL } from '../config'
+import { useAuth } from '@clerk/clerk-react'
 
 export default function Edit() {
+    const { userId } = useAuth()
     const { id } = useParams()
     const navigate = useNavigate()
     const [textContent, setTextContent] = useState('')
@@ -84,7 +86,9 @@ export default function Edit() {
                 tasks: tasks
             }
 
-            await axios.put(`${API_URL}/roadmaps/${id}/smart`, payload)
+            await axios.put(`${API_URL}/roadmaps/${id}/smart`, payload, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
 
             navigate(`/roadmap/${id}`)
         } catch (err) {

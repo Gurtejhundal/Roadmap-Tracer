@@ -5,8 +5,10 @@ import axios from 'axios'
 import { Upload, FileText, Sparkles, AlertCircle } from 'lucide-react'
 
 import { API_URL } from '../config'
+import { useAuth } from '@clerk/clerk-react'
 
 export default function Import() {
+    const { userId } = useAuth()
     const navigate = useNavigate()
     const [name, setName] = useState('')
     const [rawText, setRawText] = useState('')
@@ -93,7 +95,9 @@ export default function Import() {
                 tasks: tasks
             }
 
-            const res = await axios.post(`${API_URL}/roadmaps/import`, payload)
+            const res = await axios.post(`${API_URL}/roadmaps/import`, payload, {
+                headers: { 'X-Clerk-User-Id': userId }
+            })
             navigate(`/roadmap/${res.data.id}`)
         } catch (err) {
             console.error(err)
