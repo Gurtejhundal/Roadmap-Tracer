@@ -1030,11 +1030,17 @@ body.theme-air .section-title {
 
 /* Fix Button Visibility in Air Theme */
 body.theme-air .btn-primary,
-body.theme-air .btn-secondary,
-body.theme-air .status-badge {
+body.theme-air .btn-secondary {
     border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* For badges in Air, we want them to pop like buttons too, but respect the Gradient defined globally */
+body.theme-air .status-badge {
+    /* Don't override background here, let the global gradient (var(--primary)) shine through */
+    border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
