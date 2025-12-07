@@ -52,10 +52,10 @@ Roadmap Tracer is a modern, minimalist application designed to help you plan, tr
 
 ## ☁️ Deployment
 
-- **Frontend**: Deployed on [Vercel](https://vercel.com).
-- **Backend**: Deployed on [Render](https://render.com).
+- **Frontend**: Deployed on [Vercel](https://roadmap-tracer.vercel.app).
+- **Backend**: Deployed on [Render](https://roadmap-api-1b65.onrender.com).
 - **Database**: Hosted on Render PostgreSQL.
-- **Status**: Live 🟢
+- **Status**: Live 🟢 [Visit App](https://roadmap-tracer.vercel.app)
 
 ## 🔒 License
 
