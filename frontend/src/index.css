@@ -490,6 +490,107 @@ select:focus {
     margin-top: 1rem;
 }
 
+.import-source-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.source-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.source-tab:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.source-tab.active {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border);
+}
+
+.import-editor {
+    min-height: 320px;
+}
+
+.file-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 220px;
+    padding: 2rem;
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-dropzone:hover,
+.file-dropzone.has-file {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.file-dropzone input {
+    display: none;
+}
+
+.file-dropzone span {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.file-dropzone small {
+    max-width: 420px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.clear-file-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: auto;
+    margin-top: 0.75rem;
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(255, 77, 77, 0.25);
+    border-radius: 10px;
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff7a7a;
+    font-weight: 600;
+}
+
 /* Roadmap View */
 .roadmap-view {
     text-align: left;

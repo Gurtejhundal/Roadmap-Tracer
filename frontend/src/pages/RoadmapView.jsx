@@ -1,23 +1,19 @@
-import { useState, useEffect, useRef } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
-import { CheckCircle, Circle, ArrowLeft, Calendar, Edit2, Flame, Save, X, Download, FileText, Image as ImageIcon, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Calendar, Edit2, Save, X, Download, FileText, ChevronDown } from 'lucide-react'
 import TimeframeHeader from '../components/TimeframeHeader'
 
 // Export Libraries
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx'
+import { Document, Packer, Paragraph, HeadingLevel } from 'docx'
 import { saveAs } from 'file-saver'
 
-import { API_URL } from '../config'
-import { useAuth } from '@clerk/clerk-react'
+import { API_URL, LOCAL_USER_ID } from '../config'
 
 export default function RoadmapView() {
-    const { userId } = useAuth()
     const { id } = useParams()
-    const navigate = useNavigate()
     const [tasks, setTasks] = useState([])
     const [roadmap, setRoadmap] = useState(null)
     const [timeframes, setTimeframes] = useState([])
@@ -28,17 +24,13 @@ export default function RoadmapView() {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const roadmapRef = useRef(null) // Ref for PDF capture
+    const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
-    useEffect(() => {
-        fetchData()
-        fetchTimeframes()
-    }, [id])
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const [rRes, tRes] = await Promise.all([
-                axios.get(`${API_URL}/roadmaps/${id}`),
-                axios.get(`${API_URL}/roadmaps/${id}/tasks`)
+                axios.get(`${API_URL}/roadmaps/${id}`, { headers: authHeaders }),
+                axios.get(`${API_URL}/roadmaps/${id}/tasks`, { headers: authHeaders })
             ])
             setRoadmap(rRes.data)
             setNewName(rRes.data.name)
@@ -46,22 +38,27 @@ export default function RoadmapView() {
         } catch (error) {
             console.error("Failed to fetch data", error)
         }
-    }
+    }, [authHeaders, id])
 
-    const fetchTimeframes = async () => {
+    const fetchTimeframes = useCallback(async () => {
         try {
-            const res = await axios.get(`${API_URL}/roadmaps/${id}/timeframes`)
+            const res = await axios.get(`${API_URL}/roadmaps/${id}/timeframes`, { headers: authHeaders })
             setTimeframes(res.data)
         } catch (error) {
             console.error("Failed to fetch timeframes", error)
         }
-    }
+    }, [authHeaders, id])
+
+    useEffect(() => {
+        fetchData()
+        fetchTimeframes()
+    }, [fetchData, fetchTimeframes])
 
     const toggleTask = async (taskId, currentStatus) => {
         setTasks(tasks.map(t => t.id === taskId ? { ...t, is_done: !currentStatus } : t))
         try {
             await axios.put(`${API_URL}/tasks/${taskId}/status`, { is_done: !currentStatus }, {
-                headers: { 'X-Clerk-User-Id': userId }
+                headers: authHeaders
             })
         } catch (error) {
             console.error("Failed to update task", error)
@@ -73,7 +70,7 @@ export default function RoadmapView() {
         if (!newName.trim()) return
         try {
             await axios.put(`${API_URL}/roadmaps/${id}/name`, { name: newName }, {
-                headers: { 'X-Clerk-User-Id': userId }
+                headers: authHeaders
             })
             setRoadmap({ ...roadmap, name: newName })
             setIsEditingName(false)

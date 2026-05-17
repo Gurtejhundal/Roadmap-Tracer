@@ -19,6 +19,9 @@ env/
 dist/
 build/
 
+# Local dev server logs
+*_dev.*.log
+
 # IDEs
 .vscode/
 .idea/
