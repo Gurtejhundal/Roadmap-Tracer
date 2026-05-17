@@ -3,9 +3,17 @@ setlocal
 
 title Roadmap Tracer Launcher
 set "ROOT=%~dp0"
+set "GUI_LAUNCHER=%ROOT%launcher.ps1"
 set "BACKEND_DIR=%ROOT%backend"
 set "FRONTEND_DIR=%ROOT%frontend"
 set "APP_URL=http://127.0.0.1:5173"
+
+if exist "%GUI_LAUNCHER%" (
+    powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%GUI_LAUNCHER%"
+    if not errorlevel 1 exit /b 0
+    echo GUI launcher failed. Falling back to console launcher.
+    echo.
+)
 
 echo ==================================================
 echo Roadmap Tracer

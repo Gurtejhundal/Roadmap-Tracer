@@ -53,6 +53,15 @@ launcher.bat
 
 The launcher starts the FastAPI backend, starts the Vite frontend, and opens the app at `http://127.0.0.1:5173`.
 
+To customize the launcher logo, place one of these files beside `launcher.bat`:
+
+- `launcher-logo.png`
+- `launcher-logo.jpg`
+- `launcher-logo.jpeg`
+- `launcher-logo.ico`
+
+PNG is the recommended format. The launcher will use the first matching logo file it finds.
+
 ### Frontend
 
 ```bash
