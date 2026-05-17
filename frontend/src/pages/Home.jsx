@@ -12,10 +12,10 @@ export default function Home() {
 
     const fetchRoadmaps = useCallback(async () => {
         try {
-            const res = await axios.get(`${API_URL}/roadmaps/`, {
+            const res = await axios.get(`${API_URL}/roadmaps`, {
                 headers: { 'X-Local-User-Id': LOCAL_USER_ID }
             })
-            setRoadmaps(res.data)
+            setRoadmaps(Array.isArray(res.data) ? res.data : [])
         } catch (error) {
             console.error("Failed to fetch roadmaps", error)
         } finally {
