@@ -12,6 +12,8 @@ import {
     Download,
     Edit2,
     FileText,
+    ListTree,
+    PanelLeftOpen,
     Plus,
     Save,
     Search,
@@ -32,6 +34,101 @@ const statusFilters = [
     { value: 'done', label: 'Done' },
 ]
 
+const timelineRootPattern = /^(?:day|week|month|phase|module|unit|part|section|sprint|milestone|quarter|q)\s*[\divx]*/i
+const topLevelPattern = /^(?:\d{1,2}\.|version\b|roadmap overview\b|final\b|mock\b|core strategy\b|what not to do\b|the exact\b|milestone gates\b|weekly time budget\b)/i
+const timeHintPattern = /\b(?:month|week|day|phase|unit|module|quarter|q)\s*[\divx]+|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i
+
+function isTimelineRoot(label) {
+    return timelineRootPattern.test(label.trim())
+}
+
+function isTopLevelHeading(label, index) {
+    const normalized = label.trim()
+    return index === 0 || isTimelineRoot(normalized) || topLevelPattern.test(normalized)
+}
+
+function extractTimeHint(label) {
+    const match = label.match(timeHintPattern)
+    return match ? match[0] : ''
+}
+
+function buildOutline(groupEntries) {
+    const sections = []
+    const sectionMap = new Map()
+    const byGroup = {}
+    let activeSection = null
+
+    const ensureSection = (title, isVirtual = true) => {
+        const key = title.toLowerCase()
+        if (!sectionMap.has(key)) {
+            const section = {
+                id: `section-${sections.length}`,
+                title,
+                isVirtual,
+                entry: null,
+                children: [],
+                taskCount: 0,
+                doneCount: 0,
+            }
+            sectionMap.set(key, section)
+            sections.push(section)
+        }
+        return sectionMap.get(key)
+    }
+
+    groupEntries.forEach(([group, groupTasks], index) => {
+        const parts = group.split(/\s+-\s+/).map((part) => part.trim()).filter(Boolean)
+        let sectionTitle = group
+        let title = group
+        let depth = 0
+        let section
+
+        if (parts.length > 1 && isTimelineRoot(parts[0])) {
+            sectionTitle = parts[0]
+            title = parts.slice(1).join(' - ')
+            depth = 1
+            section = ensureSection(sectionTitle)
+        } else if (isTopLevelHeading(group, index) || !activeSection) {
+            section = ensureSection(group, false)
+            sectionTitle = section.title
+            title = group
+            depth = 0
+        } else {
+            section = activeSection
+            sectionTitle = section.title
+            title = group
+            depth = 1
+        }
+
+        const doneCount = groupTasks.filter((task) => task.is_done).length
+        const entry = {
+            id: `group-${index}`,
+            group,
+            title,
+            sectionTitle,
+            depth,
+            taskCount: groupTasks.length,
+            doneCount,
+            timeHint: extractTimeHint(group),
+        }
+
+        if (depth === 0) {
+            section.entry = entry
+            section.isVirtual = false
+            activeSection = section
+        } else {
+            section.children.push(entry)
+            if (!activeSection) activeSection = section
+        }
+
+        section.taskCount += groupTasks.length
+        section.doneCount += doneCount
+        byGroup[group] = entry
+    })
+
+    return { sections, byGroup }
+}
+
 export default function RoadmapView() {
     const { id } = useParams()
     const [tasks, setTasks] = useState([])
@@ -45,9 +142,12 @@ export default function RoadmapView() {
     const [editingTaskId, setEditingTaskId] = useState(null)
     const [editingTaskTitle, setEditingTaskTitle] = useState('')
     const [newTaskTitles, setNewTaskTitles] = useState({})
+    const [activeGroup, setActiveGroup] = useState('')
+    const [isTocOpen, setIsTocOpen] = useState(false)
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const roadmapRef = useRef(null)
+    const groupRefs = useRef({})
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const fetchData = useCallback(async () => {
@@ -108,10 +208,68 @@ export default function RoadmapView() {
             .filter(([, groupTasks]) => groupTasks.length > 0)
     }, [groupedTasks, searchTerm, statusFilter])
 
+    const outline = useMemo(() => buildOutline(Object.entries(groupedTasks)), [groupedTasks])
+    const visibleGroupSet = useMemo(
+        () => new Set(visibleGroupedTasks.map(([group]) => group)),
+        [visibleGroupedTasks]
+    )
+    const visibleOutlineSections = useMemo(() => {
+        return outline.sections
+            .map((section) => {
+                const entry = section.entry && visibleGroupSet.has(section.entry.group) ? section.entry : null
+                const children = section.children.filter((child) => visibleGroupSet.has(child.group))
+                if (!entry && children.length === 0) return null
+                return {
+                    ...section,
+                    entry,
+                    children,
+                    taskCount: [entry, ...children].filter(Boolean).reduce((count, item) => count + item.taskCount, 0),
+                    doneCount: [entry, ...children].filter(Boolean).reduce((count, item) => count + item.doneCount, 0),
+                }
+            })
+            .filter(Boolean)
+    }, [outline.sections, visibleGroupSet])
+
     const totalTasks = tasks.length
     const completedTasks = tasks.filter((task) => task.is_done).length
     const visibleTasksCount = visibleGroupedTasks.reduce((count, [, groupTasks]) => count + groupTasks.length, 0)
     const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    const activeEntry =
+        outline.byGroup[activeGroup] ||
+        (visibleOutlineSections[0]?.entry || visibleOutlineSections[0]?.children[0]) ||
+        null
+
+    useEffect(() => {
+        if (!visibleGroupedTasks.length) {
+            setActiveGroup('')
+            return undefined
+        }
+
+        if (!activeGroup || !visibleGroupSet.has(activeGroup)) {
+            setActiveGroup(visibleGroupedTasks[0][0])
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visibleEntries = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+                const nextGroup = visibleEntries[0]?.target?.dataset?.group
+                if (nextGroup) setActiveGroup(nextGroup)
+            },
+            {
+                rootMargin: '-20% 0px -65% 0px',
+                threshold: [0.1, 0.35, 0.65],
+            }
+        )
+
+        visibleGroupedTasks.forEach(([group]) => {
+            const node = groupRefs.current[group]
+            if (node) observer.observe(node)
+        })
+
+        return () => observer.disconnect()
+    }, [activeGroup, visibleGroupedTasks, visibleGroupSet])
 
     const toggleTask = async (taskId, currentStatus) => {
         setTasks((current) =>
@@ -244,6 +402,20 @@ export default function RoadmapView() {
         setCollapsedGroups(new Set())
     }
 
+    const goToGroup = (group) => {
+        setCollapsedGroups((current) => {
+            const next = new Set(current)
+            next.delete(group)
+            return next
+        })
+        setActiveGroup(group)
+        setIsTocOpen(false)
+
+        window.requestAnimationFrame(() => {
+            groupRefs.current[group]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+    }
+
     const startEditingTask = (task) => {
         setEditingTaskId(task.id)
         setEditingTaskTitle(task.title)
@@ -353,7 +525,84 @@ export default function RoadmapView() {
     if (!roadmap) return <div className="loading">Loading...</div>
 
     return (
-        <div className="roadmap-view" ref={roadmapRef}>
+        <div className={`roadmap-shell ${isTocOpen ? 'toc-open' : ''}`}>
+            <button
+                type="button"
+                className="toc-floating-btn btn-secondary"
+                onClick={() => setIsTocOpen(true)}
+                data-html2canvas-ignore
+            >
+                <PanelLeftOpen size={18} />
+                Contents
+            </button>
+
+            <div className="toc-backdrop" onClick={() => setIsTocOpen(false)} data-html2canvas-ignore />
+
+            <aside className="toc-panel glass-panel" data-html2canvas-ignore>
+                <div className="toc-header">
+                    <div>
+                        <span className="toc-kicker">Roadmap position</span>
+                        <h3>
+                            <ListTree size={18} />
+                            Contents
+                        </h3>
+                    </div>
+                    <button className="icon-btn toc-close" onClick={() => setIsTocOpen(false)} aria-label="Close contents">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="toc-current">
+                    <span>Current</span>
+                    <strong>{activeEntry ? activeEntry.sectionTitle : 'No section selected'}</strong>
+                    {activeEntry?.depth > 0 && <small>{activeEntry.title}</small>}
+                    {activeEntry?.timeHint && <em>{activeEntry.timeHint}</em>}
+                </div>
+
+                <div className="toc-list">
+                    {visibleOutlineSections.map((section) => (
+                        <div className="toc-section" key={section.id}>
+                            {section.entry ? (
+                                <button
+                                    type="button"
+                                    className={`toc-section-header toc-section-button ${activeGroup === section.entry.group ? 'active' : ''}`}
+                                    onClick={() => goToGroup(section.entry.group)}
+                                >
+                                    <span>{section.title}</span>
+                                    <small>
+                                        {section.doneCount}/{section.taskCount}
+                                    </small>
+                                    {section.entry.timeHint && <em>{section.entry.timeHint}</em>}
+                                </button>
+                            ) : (
+                                <div className="toc-section-header">
+                                    <span>{section.title}</span>
+                                    <small>
+                                        {section.doneCount}/{section.taskCount}
+                                    </small>
+                                </div>
+                            )}
+
+                            {section.children.map((child) => (
+                                <button
+                                    type="button"
+                                    key={child.group}
+                                    className={`toc-item depth-1 ${activeGroup === child.group ? 'active' : ''}`}
+                                    onClick={() => goToGroup(child.group)}
+                                >
+                                    <span>{child.title}</span>
+                                    <small>
+                                        {child.doneCount}/{child.taskCount}
+                                    </small>
+                                    {child.timeHint && <em>{child.timeHint}</em>}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </aside>
+
+            <main className="roadmap-view" ref={roadmapRef}>
             <div className="view-header" data-html2canvas-ignore>
                 <div className="header-left">
                     <Link to="/">
@@ -465,6 +714,15 @@ export default function RoadmapView() {
                 </div>
 
                 <div className="roadmap-tools" data-html2canvas-ignore>
+                    {activeEntry && (
+                        <div className="location-strip">
+                            <span>Current location</span>
+                            <strong>{activeEntry.sectionTitle}</strong>
+                            {activeEntry.depth > 0 && <small>{activeEntry.title}</small>}
+                            {activeEntry.timeHint && <em>{activeEntry.timeHint}</em>}
+                        </div>
+                    )}
+
                     <div className="roadmap-search">
                         <Search size={18} />
                         <input
@@ -521,11 +779,25 @@ export default function RoadmapView() {
                         return (
                             <motion.div
                                 key={group}
+                                ref={(node) => {
+                                    if (node) groupRefs.current[group] = node
+                                }}
+                                data-group={group}
+                                id={`roadmap-section-${outline.byGroup[group]?.id || groupIndex}`}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: Math.min(groupIndex * 0.03, 0.3) }}
                                 className="timeframe-group"
                             >
+                                {outline.byGroup[group]?.depth > 0 && (
+                                    <div className="section-breadcrumb" data-html2canvas-ignore>
+                                        <span>{outline.byGroup[group].sectionTitle}</span>
+                                        <ChevronRight size={14} />
+                                        <strong>{outline.byGroup[group].title}</strong>
+                                        {outline.byGroup[group].timeHint && <em>{outline.byGroup[group].timeHint}</em>}
+                                    </div>
+                                )}
+
                                 {timeframeData ? (
                                     <TimeframeHeader timeframe={timeframeData} onUpdate={fetchTimeframes} />
                                 ) : (
@@ -708,6 +980,7 @@ export default function RoadmapView() {
                 }
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             `}</style>
+            </main>
         </div>
     )
 }
