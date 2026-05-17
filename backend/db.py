@@ -289,6 +289,56 @@ def get_tasks(roadmap_id: int, user_id: str, timeframe_id: Optional[int] = None)
         db.close()
 
 
+def _task_to_dict(task: models.Task) -> Dict[str, Any]:
+    return {
+        "id": task.id,
+        "title": task.title,
+        "is_done": task.is_done,
+        "timeframe_id": task.timeframe_id,
+        "timeframe_label": task.timeframe.label,
+        "created_at": task.created_at,
+    }
+
+
+def create_task(
+    roadmap_id: int,
+    timeframe_label: str,
+    title: str,
+    user_id: str,
+) -> Optional[Dict[str, Any]]:
+    db = SessionLocal()
+    try:
+        roadmap = (
+            db.query(models.Roadmap)
+            .filter(models.Roadmap.id == roadmap_id, models.Roadmap.user_id == user_id)
+            .first()
+        )
+        if not roadmap:
+            return None
+
+        label = timeframe_label.strip() or "General"
+        timeframe = (
+            db.query(models.Timeframe)
+            .filter(models.Timeframe.roadmap_id == roadmap_id, models.Timeframe.label == label)
+            .first()
+        )
+        if not timeframe:
+            timeframe = models.Timeframe(roadmap_id=roadmap_id, label=label, granularity="section")
+            db.add(timeframe)
+            db.flush()
+
+        task = models.Task(timeframe_id=timeframe.id, title=title.strip(), is_done=False)
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        return _task_to_dict(task)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def update_task_status(task_id: int, is_done: bool, user_id: str) -> bool:
     db = SessionLocal()
     try:
@@ -304,6 +354,74 @@ def update_task_status(task_id: int, is_done: bool, user_id: str) -> bool:
         task.is_done = is_done
         db.commit()
         return True
+    finally:
+        db.close()
+
+
+def update_task_title(task_id: int, title: str, user_id: str) -> Optional[Dict[str, Any]]:
+    db = SessionLocal()
+    try:
+        task = (
+            db.query(models.Task)
+            .join(models.Timeframe)
+            .join(models.Roadmap)
+            .filter(models.Task.id == task_id, models.Roadmap.user_id == user_id)
+            .first()
+        )
+        if not task:
+            return None
+        task.title = title.strip()
+        db.commit()
+        db.refresh(task)
+        return _task_to_dict(task)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def delete_task(task_id: int, user_id: str) -> bool:
+    db = SessionLocal()
+    try:
+        task = (
+            db.query(models.Task)
+            .join(models.Timeframe)
+            .join(models.Roadmap)
+            .filter(models.Task.id == task_id, models.Roadmap.user_id == user_id)
+            .first()
+        )
+        if not task:
+            return False
+        db.delete(task)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
+
+def update_timeframe_task_status(timeframe_id: int, is_done: bool, user_id: str) -> Optional[int]:
+    db = SessionLocal()
+    try:
+        timeframe = (
+            db.query(models.Timeframe)
+            .join(models.Roadmap)
+            .filter(models.Timeframe.id == timeframe_id, models.Roadmap.user_id == user_id)
+            .first()
+        )
+        if not timeframe:
+            return None
+
+        updated = (
+            db.query(models.Task)
+            .filter(models.Task.timeframe_id == timeframe_id)
+            .update({models.Task.is_done: is_done}, synchronize_session=False)
+        )
+        db.commit()
+        return updated
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 

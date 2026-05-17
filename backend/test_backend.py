@@ -128,6 +128,55 @@ DSA                        250 serious problems + timed revision                
     assert any("250 serious problems" in title for title in titles)
 
 
+def test_task_crud_and_group_status():
+    name = f"Manage Tasks Roadmap {time.time()}"
+    response = client.post(
+        "/roadmaps",
+        json={"name": name, "text": "Phase 1\n- First task\n- Second task"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    roadmap_id = response.json()["id"]
+
+    created = client.post(
+        "/tasks",
+        json={"roadmap_id": roadmap_id, "timeframe_label": "Phase 1", "title": "Added task"},
+        headers=headers,
+    )
+    assert created.status_code == 200
+    created_task = created.json()
+    assert created_task["title"] == "Added task"
+
+    updated = client.put(
+        f"/tasks/{created_task['id']}",
+        json={"title": "Updated task"},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["title"] == "Updated task"
+
+    timeframes = client.get(f"/roadmaps/{roadmap_id}/timeframes", headers=headers)
+    assert timeframes.status_code == 200
+    timeframe_id = timeframes.json()[0]["id"]
+
+    group_update = client.put(
+        f"/timeframes/{timeframe_id}/tasks/status",
+        json={"is_done": True},
+        headers=headers,
+    )
+    assert group_update.status_code == 200
+    assert group_update.json()["updated"] == 3
+
+    tasks = client.get(f"/roadmaps/{roadmap_id}/tasks", headers=headers).json()
+    assert all(task["is_done"] for task in tasks)
+
+    deleted = client.delete(f"/tasks/{created_task['id']}", headers=headers)
+    assert deleted.status_code == 200
+
+    tasks = client.get(f"/roadmaps/{roadmap_id}/tasks", headers=headers).json()
+    assert all(task["title"] != "Updated task" for task in tasks)
+
+
 def test_get_roadmaps():
     response = client.get("/roadmaps", headers=headers)
     assert response.status_code == 200

@@ -19,6 +19,14 @@ class RoadmapResponse(BaseModel):
 class TaskUpdate(BaseModel):
     is_done: bool
 
+class TaskCreate(BaseModel):
+    roadmap_id: int
+    timeframe_label: str
+    title: str
+
+class TaskTitleUpdate(BaseModel):
+    title: str
+
 class RoadmapNameUpdate(BaseModel):
     name: str
 

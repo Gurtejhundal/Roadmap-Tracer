@@ -14,6 +14,8 @@ from models import (
     RoadmapNameUpdate,
     RoadmapResponse,
     RoadmapUpdate,
+    TaskCreate,
+    TaskTitleUpdate,
     TaskUpdate,
     TimeframeDateUpdate,
 )
@@ -300,11 +302,42 @@ def get_roadmap_tasks(roadmap_id: int, user_id: str = Depends(get_current_user))
     return db.get_tasks(roadmap_id, user_id)
 
 
+@app.post("/tasks")
+def create_task(task: TaskCreate, user_id: str = Depends(get_current_user)):
+    title = task.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Task title is required")
+
+    created = db.create_task(task.roadmap_id, task.timeframe_label, title, user_id)
+    if not created:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    return created
+
+
 @app.put("/tasks/{task_id}/status")
 def update_task_status(task_id: int, status: TaskUpdate, user_id: str = Depends(get_current_user)):
     if not db.update_task_status(task_id, status.is_done, user_id):
         raise HTTPException(status_code=404, detail="Task not found")
     return {"message": "Task status updated"}
+
+
+@app.put("/tasks/{task_id}")
+def update_task_title(task_id: int, update: TaskTitleUpdate, user_id: str = Depends(get_current_user)):
+    title = update.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Task title is required")
+
+    task = db.update_task_title(task_id, title, user_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, user_id: str = Depends(get_current_user)):
+    if not db.delete_task(task_id, user_id):
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"message": "Task deleted"}
 
 
 @app.put("/roadmaps/{roadmap_id}/smart")
@@ -350,3 +383,15 @@ def update_timeframe_dates(
     if not db.update_timeframe_dates(timeframe_id, update.start_date, update.end_date, user_id):
         raise HTTPException(status_code=404, detail="Timeframe not found")
     return {"message": "Timeframe dates updated"}
+
+
+@app.put("/timeframes/{timeframe_id}/tasks/status")
+def update_timeframe_task_status(
+    timeframe_id: int,
+    status: TaskUpdate,
+    user_id: str = Depends(get_current_user),
+):
+    updated = db.update_timeframe_task_status(timeframe_id, status.is_done, user_id)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Timeframe not found")
+    return {"message": "Timeframe task status updated", "updated": updated}
