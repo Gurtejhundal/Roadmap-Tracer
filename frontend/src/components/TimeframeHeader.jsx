@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, Calendar } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Calendar } from 'lucide-react'
 import axios from 'axios'
 import { motion } from 'framer-motion'
 
-import { API_URL } from '../config'
+import { API_URL, LOCAL_USER_ID } from '../config'
 
 export default function TimeframeHeader({ timeframe, onUpdate }) {
     const [isEditing, setIsEditing] = useState(false)
     const [startDate, setStartDate] = useState(timeframe.start_date || '')
     const [endDate, setEndDate] = useState(timeframe.end_date || '')
-    const [isExpanded, setIsExpanded] = useState(true)
+    const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const handleSave = async () => {
         // Optimistic UI: Close immediately
@@ -18,6 +18,8 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
             await axios.put(`${API_URL}/timeframes/${timeframe.id}/dates`, {
                 start_date: startDate || null,
                 end_date: endDate || null
+            }, {
+                headers: authHeaders
             })
             onUpdate()
         } catch (error) {
@@ -47,7 +49,7 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
     return (
         <div className="timeframe-header">
             <div className="timeframe-header-main">
-                <h3 className="timeframe-label" onClick={() => setIsExpanded(!isExpanded)} style={{ cursor: 'pointer' }}>
+                <h3 className="timeframe-label">
                     {timeframe.label}
                 </h3>
 

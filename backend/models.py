@@ -13,9 +13,19 @@ class RoadmapResponse(BaseModel):
     name: str
     created_at: str
     raw_text: Optional[str] = None
+    total_tasks: int = 0
+    completed_tasks: int = 0
 
 class TaskUpdate(BaseModel):
     is_done: bool
+
+class TaskCreate(BaseModel):
+    roadmap_id: int
+    timeframe_label: str
+    title: str
+
+class TaskTitleUpdate(BaseModel):
+    title: str
 
 class RoadmapNameUpdate(BaseModel):
     name: str

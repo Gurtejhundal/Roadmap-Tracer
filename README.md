@@ -1,92 +1,76 @@
-# TRAQO 🗺️
+# Roadmap Tracer
 
-**Architect your dreams. Execute. Repeat.**
+Roadmap Tracer is a React and FastAPI app for importing learning roadmaps and tracking task progress over time.
 
-TRAQO is a modern, minimalist application designed to help you plan, track, and execute your learning roadmaps and projects. With a sleek "Void Zenith" aesthetic, it combines powerful task management with a distraction-free environment.
+It supports pasted roadmap text and uploaded roadmap files. PDF import works when the PDF contains selectable text. Scanned image PDFs need OCR before upload.
 
-![Roadmap Tracer](https://via.placeholder.com/800x400.png?text=Roadmap+Tracer+Preview) 
-*(Add your own screenshot here after deployment!)*
+## Features
 
-## ✨ Features
+- Import roadmaps from pasted text.
+- Import DOCX and text-based files such as TXT, Markdown, JSON, CSV, YAML, RST, and logs.
+- Import readable-text PDFs.
+- Parse common ChatGPT roadmap formats into timeframe groups and tasks.
+- Track task completion per roadmap.
+- Show completion progress on roadmap cards and detail pages.
+- Edit roadmap task structure after import.
+- Export a roadmap to PDF or Word from the roadmap detail page.
+- Scope roadmap, task, and timeframe access by Clerk user id header.
 
-- **Smart Import**: Paste any roadmap text (e.g., "Week 1: Basics"), and our intelligent parser converts it into a structured timeline.
-- **Visual Tracking**: Track your progress with a dynamic progress bar and visual streaks (Water 💧, Fire 🔥, Earth ⛰️, Air 💨).
-- **Minimalist Design**: A "Void Zenith" dark theme with glassmorphism, smooth animations, and a dust-particle background.
-- **Export Power**: Save your roadmaps as high-quality **PDFs** or **Word Documents** for offline use.
-- **Secure Auth**: Powered by Clerk for seamless Google/Apple sign-ins.
+## Tech Stack
 
-## 🛠️ Tech Stack
+- Frontend: React, Vite, React Router, Framer Motion.
+- Backend: FastAPI, SQLAlchemy, Pydantic.
+- Database: SQLite locally, PostgreSQL-compatible via `DATABASE_URL`.
+- Auth: none. The app is configured for single-user local use.
+- API ownership: the frontend sends `X-Local-User-Id` so local roadmaps stay scoped to one owner key.
 
-- **Frontend**: React, Vite, Framer Motion, Tailwind-concepts (Custom CSS).
-- **Backend**: Python, FastAPI, SQLAlchemy.
-- **Database**: PostgreSQL (Production) / SQLite (Dev).
-- **Authentication**: Clerk.
+## Setup
 
-## 🚀 Getting Started
+### Backend
 
-### Prerequisites
-- Node.js (v18+)
-- Python (v3.10+)
+```bash
+cd backend
+pip install -r requirements.txt pytest
+uvicorn main:app --reload
+```
 
-# Roadmap Tracer 🗺️
+The API runs at `http://localhost:8000` by default.
 
-**Architect your dreams. Execute. Repeat.**
+### One-click launcher
 
-Roadmap Tracer is a modern, minimalist application designed to help you plan, track, and execute your learning roadmaps and projects. With a sleek "Void Zenith" aesthetic, it combines powerful task management with a distraction-free environment.
+On Windows, run:
 
-![Roadmap Tracer](https://via.placeholder.com/800x400.png?text=Roadmap+Tracer+Preview) 
-*(Add your own screenshot here after deployment!)*
+```bat
+launcher.bat
+```
 
-## ✨ Features
+The launcher starts the FastAPI backend, starts the Vite frontend, and opens the app at `http://127.0.0.1:5173`.
 
-- **Smart Import**: Paste any roadmap text (e.g., "Week 1: Basics"), and our intelligent parser converts it into a structured timeline.
-- **Visual Tracking**: Track your progress with a dynamic progress bar and visual streaks (Water 💧, Fire 🔥, Earth ⛰️, Air 💨).
-- **Minimalist Design**: A "Void Zenith" dark theme with glassmorphism, smooth animations, and a dust-particle background.
-- **Export Power**: Save your roadmaps as high-quality **PDFs** or **Word Documents** for offline use.
-- **Secure Auth**: Powered by Clerk for seamless Google/Apple sign-ins.
+### Frontend
 
-## 🛠️ Tech Stack
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- **Frontend**: React, Vite, Framer Motion, Tailwind-concepts (Custom CSS).
-- **Backend**: Python, FastAPI, SQLAlchemy.
-- **Database**: PostgreSQL (Production) / SQLite (Dev).
-- **Authentication**: Clerk.
+The app runs at the Vite URL printed in the terminal, usually `http://localhost:5173`.
 
-## 🚀 Getting Started
+Set `VITE_API_URL` if the backend is not running on `http://localhost:8000`.
 
-### Prerequisites
-- Node.js (v18+)
-- Python (v3.10+)
+## Checks
 
-### Installation
+```bash
+cd backend
+python -m pytest
 
-1.  **Clone the repo**
-    ```bash
-    git clone https://github.com/Gurtejhundal/Roadmap-Tracer.git
-    cd Roadmap-Tracer
-    ```
+cd ../frontend
+npm run lint
+npm run build
+```
 
-2.  **Frontend Setup**
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
+## Known Limits
 
-3.  **Backend Setup**
-    ```bash
-    cd backend
-    pip install -r requirements.txt
-    uvicorn main:app --reload
-    ```
-
-## ☁️ Deployment
-
-- **Frontend**: Deployed on [Vercel](https://roadmap-tracer.vercel.app).
-- **Backend**: Deployed on [Render](https://roadmap-api-1b65.onrender.com).
-- **Database**: Hosted on Render PostgreSQL.
-- **Status**: Live 🟢 [Visit App](https://roadmap-tracer.vercel.app) [Visit App](https://roadmap-tracer.vercel.app)
-
-## 🔒 License
-
-This project is for personal use and development.
+- PDF import extracts embedded text only. It uses layout extraction where available to preserve tables and roadmap sections. It does not OCR scanned documents.
+- The frontend uses a fixed local owner id. This is deliberate for personal use, not suitable for multi-user deployment.
+- Frontend export libraries currently create a large production bundle; split-loading export code is the next performance fix.

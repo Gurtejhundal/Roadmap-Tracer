@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Droplets, Flame, Mountain, Wind } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-import { UserButton } from '@clerk/clerk-react'
 
 export default function Navbar() {
     const location = useLocation()
@@ -15,11 +14,9 @@ export default function Navbar() {
 
     return (
         <nav className="navbar-custom">
-            {/* Left: User Profile */}
             <div className="nav-left">
                 <div className="profile-wrapper">
-                    <UserButton afterSignOutUrl="/login" />
-                    <span className="profile-label">Profile</span>
+                    <span className="profile-label">Local Mode</span>
                 </div>
             </div>
 
