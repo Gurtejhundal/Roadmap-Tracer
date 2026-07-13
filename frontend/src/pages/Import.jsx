@@ -98,7 +98,9 @@ export default function Import() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
             >
-                <h2 className="section-title">Import Roadmap</h2>
+                <span className="eyebrow">New roadmap</span>
+                <h2 className="section-title">What are you learning?</h2>
+                <p className="form-intro">Bring an existing plan. Traqo will turn its sections into a focused, trackable workspace.</p>
 
                 <div className="import-source-switch" role="tablist" aria-label="Roadmap import source">
                     <button
@@ -120,8 +122,9 @@ export default function Import() {
                 </div>
 
                 <div className="form-group">
-                    <label>Roadmap Name</label>
+                    <label htmlFor="roadmap-name">Roadmap name</label>
                     <input
+                        id="roadmap-name"
                         type="text"
                         placeholder="e.g. Frontend Mastery"
                         value={name}

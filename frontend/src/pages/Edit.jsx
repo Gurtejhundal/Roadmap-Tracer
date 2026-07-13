@@ -58,7 +58,13 @@ export default function Edit() {
         }
     }
 
-    if (loading) return <div>Loading...</div>
+    if (loading) return (
+        <div className="loading-state" role="status" aria-live="polite">
+            <span className="loading-spinner" aria-hidden="true" />
+            <strong>Preparing the editor</strong>
+            <span>Formatting your roadmap text…</span>
+        </div>
+    )
 
     return (
         <div className="edit-page">
@@ -66,38 +72,42 @@ export default function Edit() {
                 <button className="btn-secondary" onClick={() => navigate(-1)}>
                     <ArrowLeft size={18} /> Back
                 </button>
-                <div style={{ flex: 1 }}></div>
+                <div className="edit-heading">
+                    <span className="eyebrow">Structure editor</span>
+                    <h2>Edit roadmap</h2>
+                </div>
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
                     <Save size={18} style={{ marginRight: '8px' }} />
                     {saving ? 'Saving...' : 'Save Changes'}
                 </button>
             </div>
 
-            <div className="glass-panel">
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Roadmap Name</label>
+            <div className="glass-panel edit-workspace">
+                <div className="form-group">
+                    <label htmlFor="edit-roadmap-name">Roadmap name</label>
                     <input
+                        id="edit-roadmap-name"
                         className="name-input"
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '1.2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px' }}
                         value={roadmapName}
                         onChange={(e) => setRoadmapName(e.target.value)}
                     />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label style={{ color: 'var(--text-secondary)' }}>
+                <div className="editor-label-row">
+                    <label htmlFor="roadmap-content">
                         <FileText size={16} style={{ marginBottom: '-2px', marginRight: '6px' }} />
                         Content (Smart Text)
                     </label>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>
+                    <div className="format-hint">
                         <Sparkles size={12} style={{ marginRight: '4px' }} />
                         Supports Week 1 - Topic format
                     </div>
                 </div>
 
-                {error && <div style={{ color: '#ff4d4d', marginBottom: '1rem' }}>{error}</div>}
+                {error && <div className="error-message" role="alert">{error}</div>}
 
                 <textarea
+                    id="roadmap-content"
                     className="code-editor"
                     value={textContent}
                     onChange={(e) => setTextContent(e.target.value)}

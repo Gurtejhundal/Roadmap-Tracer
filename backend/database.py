@@ -5,8 +5,14 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
 
-# Prioritize Env Var (Cloud), fallback to Local SQLite
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roadmap.db")
+# Prioritize Env Var (Cloud), fallback to Local SQLite.
+# Vercel's function filesystem is ephemeral; /tmp keeps preview deploys writable.
+if os.getenv("DATABASE_URL"):
+    DATABASE_URL = os.getenv("DATABASE_URL")
+elif os.getenv("VERCEL"):
+    DATABASE_URL = "sqlite:////tmp/roadmap.db"
+else:
+    DATABASE_URL = "sqlite:///./roadmap.db"
 
 engine = create_engine(
     DATABASE_URL, 

@@ -4,17 +4,24 @@ Roadmap Tracer is a React and FastAPI app for importing learning roadmaps and tr
 
 It supports pasted roadmap text and uploaded roadmap files. PDF import works when the PDF contains selectable text. Scanned image PDFs need OCR before upload.
 
+## About
+
+Roadmap Tracer is built for personal study plans that are too large to manage as plain text. Import a roadmap from ChatGPT, PDF, DOCX, Markdown, or other text-based files, then track it as a structured checklist with sections, subsections, progress, search, and a contents panel for fast navigation.
+
+The app is designed for single-user local use. It removes hosted sign-in friction and focuses on turning messy roadmap documents into something you can actually follow day by day, month by month, or section by section.
+
 ## Features
 
 - Import roadmaps from pasted text.
 - Import DOCX and text-based files such as TXT, Markdown, JSON, CSV, YAML, RST, and logs.
 - Import readable-text PDFs.
 - Parse common ChatGPT roadmap formats into timeframe groups and tasks.
+- Navigate large roadmaps with section/subsection contents and current-location context.
 - Track task completion per roadmap.
 - Show completion progress on roadmap cards and detail pages.
 - Edit roadmap task structure after import.
 - Export a roadmap to PDF or Word from the roadmap detail page.
-- Scope roadmap, task, and timeframe access by Clerk user id header.
+- Scope roadmap, task, and timeframe access by a local owner header.
 
 ## Tech Stack
 
@@ -45,6 +52,15 @@ launcher.bat
 ```
 
 The launcher starts the FastAPI backend, starts the Vite frontend, and opens the app at `http://127.0.0.1:5173`.
+
+To customize the launcher logo, place one of these files beside `launcher.bat`:
+
+- `launcher-logo.png`
+- `launcher-logo.jpg`
+- `launcher-logo.jpeg`
+- `launcher-logo.ico`
+
+PNG is the recommended format. The launcher will use the first matching logo file it finds.
 
 ### Frontend
 
