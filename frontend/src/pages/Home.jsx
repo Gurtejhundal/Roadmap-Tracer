@@ -2,22 +2,25 @@ import { useCallback, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import axios from 'axios'
-import { Plus, Calendar, ArrowRight, Trash2 } from 'lucide-react'
+import { Plus, Calendar, ArrowRight, Trash2, RefreshCw, AlertCircle } from 'lucide-react'
 
 import { API_URL, LOCAL_USER_ID } from '../config'
 
 export default function Home() {
     const [roadmaps, setRoadmaps] = useState([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
 
     const fetchRoadmaps = useCallback(async () => {
         try {
+            setError('')
             const res = await axios.get(`${API_URL}/roadmaps`, {
                 headers: { 'X-Local-User-Id': LOCAL_USER_ID }
             })
             setRoadmaps(Array.isArray(res.data) ? res.data : [])
         } catch (error) {
             console.error("Failed to fetch roadmaps", error)
+            setError('Could not load your roadmaps. Check that the local server is running.')
         } finally {
             setLoading(false)
         }
@@ -45,11 +48,26 @@ export default function Home() {
     return (
         <div className="home-page">
             <div className="hero-section">
-                <h2 className="section-title">Your Roadmaps</h2>
+                <div>
+                    <span className="eyebrow">Your learning library</span>
+                    <h2 className="section-title">Keep moving forward.</h2>
+                    <p>Turn big plans into clear, trackable steps. Pick up where you left off or start something new.</p>
+                </div>
+                <Link to="/import" className="btn-primary hero-action"><Plus size={18} /> New roadmap</Link>
             </div>
 
             {loading ? (
-                <div className="loading">Loading...</div>
+                <div className="loading-state" role="status" aria-live="polite">
+                    <span className="loading-spinner" aria-hidden="true" />
+                    <strong>Opening your workspace</strong>
+                    <span>Loading roadmaps and progress…</span>
+                </div>
+            ) : error ? (
+                <div className="feedback-state error-state" role="alert">
+                    <AlertCircle size={24} />
+                    <div><strong>Roadmaps unavailable</strong><p>{error}</p></div>
+                    <button className="btn-secondary" onClick={fetchRoadmaps}><RefreshCw size={16} /> Retry</button>
+                </div>
             ) : (
                 <div className="grid-container">
                     {/* New Roadmap Card */}
@@ -60,8 +78,9 @@ export default function Home() {
                     >
                         <Link to="/import" className="roadmap-card-link">
                             <div className="roadmap-card create-card">
-                                <Plus size={40} strokeWidth={1.5} />
-                                <span>Create New</span>
+                                <span className="create-icon"><Plus size={22} /></span>
+                                <span>Create a roadmap</span>
+                                <small>Paste a plan or upload a document</small>
                             </div>
                         </Link>
                     </motion.div>

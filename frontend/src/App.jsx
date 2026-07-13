@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AnimatePresence, motion } from 'framer-motion'
 import { ThemeProvider } from './context/ThemeContext'
 import Navbar from './components/Navbar'
-import DustEffect from './components/DustEffect'
 import RoadmapView from './pages/RoadmapView'
 import Home from './pages/Home'
 import Import from './pages/Import'
@@ -36,11 +35,9 @@ function AnimatedRoutes() {
 
 function App() {
     return (
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ThemeProvider>
                 <div className="app-container">
-                    <DustEffect />
-                    <h1 className="app-title">TRAQO</h1>
                     <Navbar />
                     <div className="content-container">
                         <AnimatedRoutes />

@@ -9,11 +9,13 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
     const [isEditing, setIsEditing] = useState(false)
     const [startDate, setStartDate] = useState(timeframe.start_date || '')
     const [endDate, setEndDate] = useState(timeframe.end_date || '')
+    const [error, setError] = useState('')
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const handleSave = async () => {
         // Optimistic UI: Close immediately
         setIsEditing(false)
+        setError('')
         try {
             await axios.put(`${API_URL}/timeframes/${timeframe.id}/dates`, {
                 start_date: startDate || null,
@@ -24,7 +26,8 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
             onUpdate()
         } catch (error) {
             console.error("Failed to update timeframe", error)
-            // Optional: Re-open or show toast on error, but for now keep it simple/snappy
+            setError('Dates could not be saved. Try again.')
+            setIsEditing(true)
         }
     }
 
@@ -60,6 +63,8 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
                     <button
                         className="icon-btn"
                         onClick={() => setIsEditing(!isEditing)}
+                        aria-label={`${isEditing ? 'Close' : 'Edit'} dates for ${timeframe.label}`}
+                        aria-expanded={isEditing}
                     >
                         <Calendar size={16} />
                     </button>
@@ -91,6 +96,7 @@ export default function TimeframeHeader({ timeframe, onUpdate }) {
                     <button className="btn-primary btn-small" onClick={handleSave}>
                         Save Dates
                     </button>
+                    {error && <div className="inline-error" role="alert">{error}</div>}
                 </motion.div>
             )}
 

@@ -22,10 +22,6 @@ import {
 } from 'lucide-react'
 import TimeframeHeader from '../components/TimeframeHeader'
 
-import jsPDF from 'jspdf'
-import { Document, Packer, Paragraph, HeadingLevel } from 'docx'
-import { saveAs } from 'file-saver'
-
 import { API_URL, LOCAL_USER_ID } from '../config'
 
 const statusFilters = [
@@ -146,12 +142,14 @@ export default function RoadmapView() {
     const [isTocOpen, setIsTocOpen] = useState(false)
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
+    const [loadError, setLoadError] = useState('')
     const roadmapRef = useRef(null)
     const groupRefs = useRef({})
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const fetchData = useCallback(async () => {
         try {
+            setLoadError('')
             const [rRes, tRes] = await Promise.all([
                 axios.get(`${API_URL}/roadmaps/${id}`, { headers: authHeaders }),
                 axios.get(`${API_URL}/roadmaps/${id}/tasks`, { headers: authHeaders }),
@@ -161,6 +159,7 @@ export default function RoadmapView() {
             setTasks(tRes.data)
         } catch (error) {
             console.error('Failed to fetch data', error)
+            setLoadError('This roadmap could not be loaded. It may have been removed or the local server is unavailable.')
         }
     }, [authHeaders, id])
 
@@ -421,10 +420,11 @@ export default function RoadmapView() {
         setEditingTaskTitle(task.title)
     }
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         setIsExporting(true)
         setIsExportMenuOpen(false)
         try {
+            const { default: jsPDF } = await import('jspdf')
             const doc = new jsPDF()
             doc.setFont('helvetica', 'bold')
             doc.setFontSize(24)
@@ -476,6 +476,10 @@ export default function RoadmapView() {
         setIsExporting(true)
         setIsExportMenuOpen(false)
         try {
+            const [{ Document, Packer, Paragraph, HeadingLevel }, { saveAs }] = await Promise.all([
+                import('docx'),
+                import('file-saver'),
+            ])
             const children = [
                 new Paragraph({
                     text: roadmap.name,
@@ -522,7 +526,20 @@ export default function RoadmapView() {
         }
     }
 
-    if (!roadmap) return <div className="loading">Loading...</div>
+    if (loadError) return (
+        <div className="feedback-state error-state" role="alert">
+            <div><strong>Roadmap unavailable</strong><p>{loadError}</p></div>
+            <Link to="/" className="btn-secondary"><ArrowLeft size={16} /> Back to library</Link>
+        </div>
+    )
+
+    if (!roadmap) return (
+        <div className="loading-state" role="status" aria-live="polite">
+            <span className="loading-spinner" aria-hidden="true" />
+            <strong>Building your roadmap view</strong>
+            <span>Organizing sections, tasks, and progress…</span>
+        </div>
+    )
 
     return (
         <div className={`roadmap-shell ${isTocOpen ? 'toc-open' : ''}`}>
