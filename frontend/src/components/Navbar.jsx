@@ -12,9 +12,12 @@ export default function Navbar() {
     return (
         <nav className="navbar-custom">
             <Link to="/" className="brand-lockup" aria-label="Traqo home">
-                <span className="brand-mark overflow-hidden">
-                    <img src="/android-chrome-192x192.png" alt="Traqo Logo" className="w-full h-full object-cover" />
-                </span>
+                <img 
+                  src="/android-chrome-192x192.png" 
+                  alt="Traqo Logo" 
+                  className="brand-mark" 
+                  style={{ background: "transparent", boxShadow: "none", transform: "none", borderRadius: "0" }}
+                />
                 <span><strong>Traqo</strong><small>Roadmap workspace</small></span>
             </Link>
 
