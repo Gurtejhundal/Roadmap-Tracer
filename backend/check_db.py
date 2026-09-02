@@ -1,9 +1,9 @@
 import sqlite3
-import os
+from pathlib import Path
 
-DB_FILE = "roadmap.db"
+DB_FILE = Path(__file__).resolve().with_name("roadmap.db")
 
-if not os.path.exists(DB_FILE):
+if not DB_FILE.exists():
     print("Database file not found.")
 else:
     conn = sqlite3.connect(DB_FILE)

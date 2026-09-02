@@ -1,5 +1,8 @@
 const headingRegex = /^(#{1,6}\s*)?((phase|month|week|day|module|unit|section|part|step|sprint|milestone|quarter|q)\s*[\divx]*|learning path|foundation|foundations|advanced|capstone|project|projects|assessment|review|final full mock|core strategy|version\s*[\d.]+\s*upgrades|target profile by month\s*\d+|non-negotiable operating rules|weekly time budget|milestone gates|roadmap overview|final checklist|final priority list|final coding revision set|mock mcqs|coding question\s*\d*)\b[\s:.-]*/i
-const bulletRegex = /^\s*(-|\*|\+|\d+[.)]|\[[ xX]\]|[\u2022\u25e6\u2023\u2043\u2219\u2192])\s*/u
+const bulletRegex = /^\s*(-|\*|\+|\d+[.)]|\[[ xXvV\u2713\u2714]\]|[\u2610\u2611\u2612\u2022\u25e6\u2023\u2043\u2219\u2192])\s*/u
+const checkedTaskRegex = /^\s*(\[[xXvV\u2713\u2714]\]|[\u2611\u2612])(\s+|$)/u
+const fenceRegex = /^\s*(`{3,}|~{3,})/
+const pageFooterRegex = /^Page\s+\d+\s+of\s+\d+$/i
 const dayRegex = /^(day\s*\d+\b.*)$/i
 const timeRangeRegex = /^\d{1,2}(?::\d{2})?\s*(am|pm)?\s*[-\u2013\u2014]\s*\d{1,2}(?::\d{2})?\s*(am|pm)?(\b.*)?$/i
 const noteSectionRegex = /^(.+\s+revision notes?|.+\s+mcq points?|coding practice(\s+for .+)?|practice(\s+.+)?|requirements|queries|cover these topics( properly)?|advantages|disadvantages|types|examples|commands|uses|steps|features|important points|mock mcqs|what not to do|the exact codetantra method|final checklist for 30\/30|final priority list)$/i
@@ -8,6 +11,7 @@ const numberedHeadingRegex = /^\d{1,2}\.\s+[A-Z][A-Za-z0-9 ,'+/&().:-]{3,}$/
 const percentRegex = /^\d+\s*%/
 const sqlStatementRegex = /^(select|insert|update|delete|create|alter|drop|truncate|grant|revoke|commit|rollback|savepoint|explain)\b/i
 const acronymRegex = /^[A-Z0-9]{2,8}$/
+const editorSectionMarkerRegex = /<!--\s*traqo-section:[a-z0-9-]+\s*-->/i
 
 const normalizeLine = (line) => line.trim().replace(/\u2013|\u2014/g, '-')
 
@@ -18,13 +22,35 @@ const cleanHeading = (line) => normalizeLine(line)
 
 const cleanTask = (line) => normalizeLine(line).replace(bulletRegex, '').replace(/\s+/g, ' ').trim()
 
-const isHeading = (line) => {
+const prepareLines = (text) => {
+    const normalized = []
+    let insideFence = false
+
+    text.split('\n').forEach((rawLine) => {
+        if (fenceRegex.test(rawLine)) {
+            insideFence = !insideFence
+            return
+        }
+        if (insideFence) return
+        const line = normalizeLine(rawLine)
+        if (line) normalized.push(line)
+    })
+
+    const documentTitle = normalized[0] || ''
+    return normalized.filter((line, index) => (
+        !pageFooterRegex.test(line) && !(index > 0 && line === documentTitle)
+    ))
+}
+
+const isHeading = (line, nextLine = '') => {
     if (!line) return false
+    if (editorSectionMarkerRegex.test(line)) return true
     if (numberedHeadingRegex.test(line)) return true
     if (bulletRegex.test(line)) return false
     if (timeRangeRegex.test(line) || noteSectionRegex.test(line)) return true
     if (percentRegex.test(line) || sqlStatementRegex.test(line) || acronymRegex.test(line)) return false
     if (line.endsWith(':') || /^\s*#{1,6}\s+\S+/.test(line) || numberedHeadingRegex.test(line) || headingRegex.test(line)) return true
+    if (nextLine && bulletRegex.test(nextLine) && line.length <= 100) return true
 
     return false
 }
@@ -46,7 +72,7 @@ const appendToTimeframe = (baseLabel, heading) => {
 }
 
 export const parseRoadmapText = (text) => {
-    const lines = text.split('\n').map(normalizeLine).filter(Boolean)
+    const lines = prepareLines(text)
     const tasks = []
     let currentTimeframe = 'General'
     let baseTimeframe = 'General'
@@ -54,14 +80,27 @@ export const parseRoadmapText = (text) => {
     let pendingTime = ''
 
     lines.forEach((line, index) => {
-        if (index === 0 && currentTimeframe === 'General' && !bulletRegex.test(line)) {
+        if (
+            index === 0
+            && currentTimeframe === 'General'
+            && !bulletRegex.test(line)
+            && !questionAnswerRegex.test(line)
+        ) {
             currentTimeframe = cleanHeading(line)
             baseTimeframe = currentTimeframe
             return
         }
 
-        if (isHeading(line)) {
+        if (isHeading(line, lines[index + 1])) {
             const heading = cleanHeading(line)
+
+            if (editorSectionMarkerRegex.test(heading)) {
+                currentDay = ''
+                pendingTime = ''
+                currentTimeframe = heading
+                baseTimeframe = heading
+                return
+            }
 
             if (dayRegex.test(heading)) {
                 currentDay = heading
@@ -100,12 +139,13 @@ export const parseRoadmapText = (text) => {
         tasks.push({
             title,
             timeframe: currentTimeframe,
-            is_done: /\[[xX]\]/.test(line),
+            is_done: checkedTaskRegex.test(line),
         })
     })
 
-    if (tasks.length === 0 && text.trim()) {
-        return [{ title: text.trim(), timeframe: 'General', is_done: false }]
+    const fallback = lines.join(' ').trim()
+    if (tasks.length === 0 && fallback) {
+        return [{ title: fallback, timeframe: 'General', is_done: false }]
     }
 
     if (tasks.length === 0) {

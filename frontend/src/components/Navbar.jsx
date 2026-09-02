@@ -1,29 +1,26 @@
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Map, Plus, Library } from 'lucide-react'
+import { Plus, Library } from 'lucide-react'
+import TraqoLogo from './TraqoLogo'
 
 export default function Navbar() {
     const location = useLocation()
     const links = [
         { path: '/', label: 'Library', icon: Library },
-        { path: '/import', label: 'New roadmap', icon: Plus },
+        { path: '/import', label: 'New', icon: Plus },
     ]
 
     return (
-        <nav className="navbar-custom">
-            <Link to="/" className="brand-lockup" aria-label="Traqo home">
-                <img 
-                  src="/android-chrome-192x192.png" 
-                  alt="Traqo Logo" 
-                  className="brand-mark" 
-                  style={{ background: "transparent", boxShadow: "none", transform: "none", borderRadius: "0" }}
-                />
-                <span><strong>Traqo</strong><small>Roadmap workspace</small></span>
-            </Link>
+        <header className="navbar-custom">
+            <div className="navbar-inner">
+                <Link to="/" className="brand-lockup" aria-label="Traqo home">
+                    <TraqoLogo className="brand-mark" />
+                    <span className="brand-wordmark">
+                        <strong>Traqo</strong>
+                        <small>Document workspace</small>
+                    </span>
+                </Link>
 
-            {/* Center: Navigation Links */}
-            <div className="nav-center">
-                <div className="nav-links">
+                <nav className="nav-links" aria-label="Primary navigation">
                     {links.map((link) => {
                         const isLibraryRoute = link.path === '/' && (
                             location.pathname === '/' ||
@@ -32,26 +29,21 @@ export default function Navbar() {
                         )
                         const isActive = isLibraryRoute || location.pathname === link.path
                         return (
-                            <Link to={link.path} key={link.path} className="nav-link-container">
-                                <link.icon size={16} aria-hidden="true" />
-                                <span className={`nav-link ${isActive ? 'active' : ''}`}>
-                                    {link.label}
-                                </span>
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="nav-indicator"
-                                        className="nav-indicator"
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
-                                )}
+                            <Link
+                                to={link.path}
+                                key={link.path}
+                                className={`nav-link-container ${isActive ? 'active' : ''}`}
+                                aria-current={isActive ? 'page' : undefined}
+                            >
+                                <link.icon size={15} aria-hidden="true" />
+                                <span>{link.label}</span>
                             </Link>
                         )
                     })}
-                </div>
+                </nav>
+
+                <span className="local-status"><i aria-hidden="true" /> Local</span>
             </div>
-
-            <span className="local-status"><i /> Local workspace</span>
-
-        </nav>
+        </header>
     )
 }

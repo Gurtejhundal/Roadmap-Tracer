@@ -3,32 +3,39 @@
     "private": true,
     "version": "0.0.0",
     "type": "module",
+    "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+    },
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+        "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+        "test": "node --test src/utils/*.test.js",
         "preview": "vite preview"
     },
     "dependencies": {
-        "axios": "^1.6.2",
-        "docx": "^9.5.1",
+        "axios": "^1.19.0",
+        "docx": "^9.7.1",
         "file-saver": "^2.0.5",
-        "framer-motion": "^10.16.16",
-        "html2canvas": "^1.4.1",
-        "jspdf": "^3.0.4",
+        "jspdf": "^4.2.1",
         "lucide-react": "^0.294.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-router-dom": "^6.20.1"
+        "react-router-dom": "^7.18.2"
     },
     "devDependencies": {
-        "@types/react": "^18.2.37",
-        "@types/react-dom": "^18.2.15",
-        "@vitejs/plugin-react": "^4.2.0",
-        "eslint": "^8.53.0",
-        "eslint-plugin-react": "^7.33.2",
-        "eslint-plugin-react-hooks": "^4.6.0",
-        "eslint-plugin-react-refresh": "^0.4.4",
-        "vite": "^5.0.0"
+        "@eslint/js": "^9.39.5",
+        "@types/react": "^18.3.31",
+        "@types/react-dom": "^18.3.7",
+        "@vitejs/plugin-react": "^6.0.5",
+        "eslint": "^9.39.5",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^7.1.1",
+        "eslint-plugin-react-refresh": "^0.5.3",
+        "globals": "^17.9.0",
+        "vite": "^8.2.1"
+    },
+    "overrides": {
+        "brace-expansion": "1.1.18"
     }
 }

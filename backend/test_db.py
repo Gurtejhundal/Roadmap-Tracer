@@ -1,14 +1,9 @@
-import os
+from sqlalchemy import text
 
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from database import engine
 
 
 def test_database_connection_smoke():
-    load_dotenv()
-    url = os.getenv("DATABASE_URL", "sqlite:///./roadmap.db")
-    engine = create_engine(url, connect_args={"check_same_thread": False} if "sqlite" in url else {})
-
     with engine.connect() as conn:
         result = conn.execute(text("SELECT 1")).scalar()
 

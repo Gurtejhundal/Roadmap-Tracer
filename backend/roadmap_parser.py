@@ -1,11 +1,17 @@
 import json
+import math
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 BULLET_PREFIX_RE = re.compile(
-    r"^\s*(?:[-*+]\s+|\d+[\.)]\s+|\[[ xX]\]\s+|[\u2022\u25e6\u2023\u2043\u2219\u2192]\s*)"
+    r"^\s*(?:[-*+]\s+|\d+[\.)]\s+|\[[ xXvV\u2713\u2714]\]\s+|"
+    r"[\u2610\u2611\u2612\u2022\u25e6\u2023\u2043\u2219\u2192]\s*)"
 )
+CHECKED_TASK_RE = re.compile(
+    r"^\s*(?:\[[xXvV\u2713\u2714]\]|[\u2611\u2612])(?:\s+|$)"
+)
+FENCE_RE = re.compile(r"^\s*(?:`{3,}|~{3,})")
 
 HEADING_RE = re.compile(
     r"^\s*(?:#{1,6}\s*)?"
@@ -92,6 +98,8 @@ def _is_heading(line: str, next_line: Optional[str] = None) -> bool:
         return True
     if HEADING_RE.match(line):
         return True
+    if next_line and BULLET_PREFIX_RE.match(next_line) and len(line) <= 100:
+        return True
 
     return False
 
@@ -117,8 +125,17 @@ def _clean_task(line: str) -> str:
 
 
 def _prepare_lines(text: str) -> List[str]:
-    lines = [_clean_line(raw_line) for raw_line in text.split("\n")]
-    lines = [line for line in lines if line]
+    lines: List[str] = []
+    inside_fence = False
+    for raw_line in text.split("\n"):
+        if FENCE_RE.match(raw_line):
+            inside_fence = not inside_fence
+            continue
+        if inside_fence:
+            continue
+        cleaned = _clean_line(raw_line)
+        if cleaned:
+            lines.append(cleaned)
     if not lines:
         return []
 
@@ -157,15 +174,184 @@ def _append_to_timeframe(base_label: str, heading: str) -> str:
     return heading or base_label or "General"
 
 
-def _parse_json_tasks(text: str) -> List[Dict[str, object]]:
+def _json_boolean(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value != 0
+    return str(value or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "y",
+        "x",
+        "done",
+        "complete",
+        "completed",
+        "checked",
+    }
+
+
+def _json_blocks(value: Any) -> List[Dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    blocks: List[Dict[str, object]] = []
+    for index, block in enumerate(value):
+        if not isinstance(block, dict):
+            continue
+        block_type = str(block.get("type") or "").strip().lower()
+        data = block.get("data")
+        if not block_type or not isinstance(data, dict):
+            continue
+        position = block.get("position")
+        blocks.append(
+            {
+                "type": block_type,
+                "data": data,
+                "position": position if isinstance(position, int) and position >= 0 else index,
+            }
+        )
+    return blocks
+
+
+DOCUMENT_ELEMENT_TYPES = {"heading", "paragraph", "list", "callout", "code", "table"}
+_INVALID_DISPLAY_VALUE = object()
+
+
+def _display_value(value: Any):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and math.isfinite(value):
+        return str(value)
+    return _INVALID_DISPLAY_VALUE
+
+
+def _bounded_integer(value: Any, minimum: int, maximum: int) -> Optional[int]:
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return max(minimum, min(maximum, parsed))
+
+
+def _document_context(element: Dict[str, Any]) -> Dict[str, object]:
+    context: Dict[str, object] = {}
+    page = _bounded_integer(element.get("page"), 0, 1_000_000)
+    if page is not None:
+        context["page"] = page
+
+    section_path = element.get("section_path")
+    if isinstance(section_path, list):
+        safe_path = []
+        for value in section_path:
+            display = _display_value(value)
+            if display is not _INVALID_DISPLAY_VALUE and display:
+                safe_path.append(display)
+        context["section_path"] = safe_path
+    return context
+
+
+def _sanitize_document_element(element: Dict[str, Any]) -> Optional[Dict[str, object]]:
+    raw_type = element.get("type")
+    element_type = raw_type if isinstance(raw_type, str) and raw_type in DOCUMENT_ELEMENT_TYPES else "paragraph"
+    sanitized: Dict[str, object] = {"type": element_type, **_document_context(element)}
+
+    if element_type in {"heading", "paragraph", "code"}:
+        text = _display_value(element.get("text"))
+        if text is _INVALID_DISPLAY_VALUE or not text:
+            return None
+        sanitized["text"] = text
+        if element_type == "heading":
+            sanitized["level"] = _bounded_integer(element.get("level"), 1, 6) or 3
+        return sanitized
+
+    if element_type == "callout":
+        title = _display_value(element.get("title"))
+        text = _display_value(element.get("text"))
+        if title is not _INVALID_DISPLAY_VALUE and title:
+            sanitized["title"] = title
+        if text is not _INVALID_DISPLAY_VALUE and text:
+            sanitized["text"] = text
+        return sanitized if "title" in sanitized or "text" in sanitized else None
+
+    if element_type == "list":
+        raw_items = element.get("items")
+        if not isinstance(raw_items, list):
+            return None
+        items = []
+        for value in raw_items:
+            display = _display_value(value)
+            if display is not _INVALID_DISPLAY_VALUE and display:
+                items.append(display)
+        if not items:
+            return None
+        sanitized["items"] = items
+        return sanitized
+
+    raw_columns = element.get("columns")
+    if raw_columns is None:
+        raw_columns = element.get("headers")
+    columns = []
+    if isinstance(raw_columns, list):
+        for value in raw_columns:
+            display = _display_value(value)
+            columns.append("" if display is _INVALID_DISPLAY_VALUE else display)
+
+    rows = []
+    raw_rows = element.get("rows")
+    if isinstance(raw_rows, list):
+        for raw_row in raw_rows:
+            values = raw_row if isinstance(raw_row, list) else [raw_row]
+            row = []
+            for value in values:
+                display = _display_value(value)
+                row.append("" if display is _INVALID_DISPLAY_VALUE else display)
+            if any(row):
+                rows.append(row)
+    if not columns and not rows:
+        return None
+    sanitized["columns"] = columns
+    sanitized["rows"] = rows
+    return sanitized
+
+
+def sanitize_document_elements(elements: Any) -> List[Dict[str, object]]:
+    if not isinstance(elements, list):
+        return []
+    sanitized = []
+    for element in elements:
+        if not isinstance(element, dict):
+            continue
+        safe_element = _sanitize_document_element(element)
+        if safe_element is not None:
+            sanitized.append(safe_element)
+    return sanitized
+
+
+def _json_document_elements(payload: Any) -> List[Dict[str, object]]:
+    if not isinstance(payload, dict):
+        return []
+    return sanitize_document_elements(payload.get("document"))
+
+
+def parse_json_roadmap(text: str) -> Optional[Dict[str, List[Dict[str, object]]]]:
+    """Parse Traqo's JSON interchange format without losing roadmap metadata."""
     try:
         payload = json.loads(text)
     except json.JSONDecodeError:
-        return []
+        return None
 
     raw_tasks = payload.get("tasks") if isinstance(payload, dict) else payload
     if not isinstance(raw_tasks, list):
-        return []
+        raw_tasks = []
 
     tasks = []
     for item in raw_tasks:
@@ -173,24 +359,46 @@ def _parse_json_tasks(text: str) -> List[Dict[str, object]]:
             title = item.strip()
             timeframe = "General"
             is_done = False
+            granularity = "section"
+            properties: Dict[str, Any] = {}
+            blocks: List[Dict[str, object]] = []
         elif isinstance(item, dict):
             title = str(item.get("title", "")).strip()
             timeframe = str(item.get("timeframe") or item.get("timeframe_label") or "General").strip()
-            is_done = bool(item.get("is_done", False))
+            is_done = _json_boolean(item.get("is_done", False))
+            granularity = str(item.get("granularity") or _granularity(timeframe)).strip() or "section"
+            properties = item.get("properties") if isinstance(item.get("properties"), dict) else {}
+            blocks = _json_blocks(item.get("blocks"))
         else:
             continue
 
         if title:
-            tasks.append(
-                {
-                    "title": title,
-                    "timeframe": timeframe or "General",
-                    "is_done": is_done,
-                    "granularity": _granularity(timeframe),
-                }
-            )
+            parsed_task: Dict[str, object] = {
+                "title": title,
+                "timeframe": timeframe or "General",
+                "is_done": is_done,
+                "granularity": granularity,
+                "properties": properties,
+                "blocks": blocks,
+            }
+            for date_field in ("start_date", "end_date"):
+                if isinstance(item, dict) and date_field in item:
+                    value = item.get(date_field)
+                    parsed_task[date_field] = None if value is None else str(value).strip()
+            timeframe_id = item.get("timeframe_id") if isinstance(item, dict) else None
+            if isinstance(timeframe_id, int) and not isinstance(timeframe_id, bool) and timeframe_id > 0:
+                parsed_task["timeframe_id"] = timeframe_id
+            tasks.append(parsed_task)
 
-    return tasks
+    return {
+        "tasks": tasks,
+        "document": _json_document_elements(payload),
+    }
+
+
+def _parse_json_tasks(text: str) -> Optional[List[Dict[str, object]]]:
+    roadmap = parse_json_roadmap(text)
+    return None if roadmap is None else roadmap["tasks"]
 
 
 def parse_tasks(text: str) -> List[Dict[str, object]]:
@@ -200,7 +408,7 @@ def parse_tasks(text: str) -> List[Dict[str, object]]:
         return []
 
     json_tasks = _parse_json_tasks(text)
-    if json_tasks:
+    if json_tasks is not None:
         return json_tasks
 
     tasks: List[Dict[str, object]] = []
@@ -252,7 +460,7 @@ def parse_tasks(text: str) -> List[Dict[str, object]]:
                     {
                         "title": title,
                         "timeframe": current_timeframe,
-                        "is_done": "[x]" in line.lower(),
+                        "is_done": CHECKED_TASK_RE.match(line) is not None,
                         "granularity": _granularity(current_timeframe),
                     }
                 )
@@ -288,6 +496,11 @@ def parse_roadmap(text: str) -> List[Dict[str, object]]:
                 "timeframe_label": timeframe,
                 "granularity": task.get("granularity") or _granularity(str(timeframe)),
                 "is_done": bool(task.get("is_done", False)),
+                **(
+                    {"timeframe_id": task["timeframe_id"]}
+                    if task.get("timeframe_id") is not None
+                    else {}
+                ),
             }
         )
     return parsed

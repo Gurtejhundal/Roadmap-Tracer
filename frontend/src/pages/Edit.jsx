@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
-import { Save, ArrowLeft, FileText, Sparkles } from 'lucide-react'
-import { parseRoadmapText, formatRoadmapToText } from '../utils/roadmapParser'
+import { ArrowLeft, FileText, Info, Save } from 'lucide-react'
+import { getApiErrorMessage } from '../utils/apiErrors'
+import { mergeEditableRoadmap, prepareEditableRoadmap } from '../utils/editableRoadmap'
+import { MAX_ROADMAP_NAME_LENGTH } from '../utils/roadmapLimits'
 
 import { API_URL, LOCAL_USER_ID } from '../config'
 
@@ -14,17 +16,21 @@ export default function Edit() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState(null)
+    const [savedTasks, setSavedTasks] = useState([])
+    const [savedSections, setSavedSections] = useState([])
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const fetchRoadmapData = useCallback(async () => {
         try {
             const res = await axios.get(`${API_URL}/roadmaps/${id}/export`, { headers: authHeaders })
+            const prepared = prepareEditableRoadmap(res.data)
             setRoadmapName(res.data.name)
-            const formattedText = formatRoadmapToText(res.data)
-            setTextContent(formattedText)
-        } catch (err) {
-            console.error("Failed to fetch roadmap", err)
-            setTextContent("# Error fetching data\nCould not load roadmap.")
+            setTextContent(prepared.text)
+            setSavedTasks(prepared.savedTasks)
+            setSavedSections(prepared.savedSections)
+        } catch (fetchError) {
+            console.error('Failed to fetch roadmap', fetchError)
+            setError('Could not load this roadmap.')
         } finally {
             setLoading(false)
         }
@@ -35,24 +41,30 @@ export default function Edit() {
     }, [fetchRoadmapData])
 
     const handleSave = async () => {
+        if (saving) return
         setError(null)
+        const normalizedName = roadmapName.trim()
+        if (!normalizedName) {
+            setError('Roadmap name is required.')
+            return
+        }
+        if (normalizedName.length > MAX_ROADMAP_NAME_LENGTH) {
+            setError(`Roadmap name must be ${MAX_ROADMAP_NAME_LENGTH} characters or fewer.`)
+            return
+        }
         setSaving(true)
 
         try {
-            const tasks = parseRoadmapText(textContent)
-            const payload = {
-                name: roadmapName,
-                tasks: tasks
-            }
-
-            await axios.put(`${API_URL}/roadmaps/${id}/smart`, payload, {
-                headers: authHeaders
-            })
-
+            const tasks = mergeEditableRoadmap(textContent, savedTasks, savedSections)
+            await axios.put(
+                `${API_URL}/roadmaps/${id}/smart`,
+                { name: normalizedName, tasks },
+                { headers: authHeaders },
+            )
             navigate(`/roadmap/${id}`)
-        } catch (err) {
-            console.error(err)
-            setError(err.response?.data?.detail || err.message || "Failed to save roadmap")
+        } catch (saveError) {
+            console.error(saveError)
+            setError(getApiErrorMessage(saveError, 'Failed to save roadmap.'))
         } finally {
             setSaving(false)
         }
@@ -67,40 +79,37 @@ export default function Edit() {
     )
 
     return (
-        <div className="edit-page">
-            <div className="edit-header">
+        <main className="edit-page">
+            <header className="edit-header">
                 <button className="btn-secondary" onClick={() => navigate(-1)}>
-                    <ArrowLeft size={18} /> Back
+                    <ArrowLeft size={16} /> Back
                 </button>
                 <div className="edit-heading">
-                    <span className="eyebrow">Structure editor</span>
-                    <h2>Edit roadmap</h2>
+                    <span className="eyebrow">Raw structure</span>
+                    <h1>Edit roadmap</h1>
                 </div>
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
-                    <Save size={18} style={{ marginRight: '8px' }} />
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    <Save size={16} /> {saving ? 'Saving…' : 'Save changes'}
                 </button>
-            </div>
+            </header>
 
-            <div className="glass-panel edit-workspace">
+            <div className="edit-workspace">
                 <div className="form-group">
                     <label htmlFor="edit-roadmap-name">Roadmap name</label>
                     <input
                         id="edit-roadmap-name"
                         className="name-input"
                         value={roadmapName}
-                        onChange={(e) => setRoadmapName(e.target.value)}
+                        onChange={(event) => setRoadmapName(event.target.value)}
+                        maxLength={MAX_ROADMAP_NAME_LENGTH}
+                        required
                     />
                 </div>
 
                 <div className="editor-label-row">
-                    <label htmlFor="roadmap-content">
-                        <FileText size={16} style={{ marginBottom: '-2px', marginRight: '6px' }} />
-                        Content (Smart Text)
-                    </label>
+                    <label htmlFor="roadmap-content"><FileText size={15} /> Roadmap outline</label>
                     <div className="format-hint">
-                        <Sparkles size={12} style={{ marginRight: '4px' }} />
-                        Supports Week 1 - Topic format
+                        <Info size={13} /> Keep task and section markers attached; they preserve notes, fields, and schedules during structural edits
                     </div>
                 </div>
 
@@ -110,12 +119,12 @@ export default function Edit() {
                     id="roadmap-content"
                     className="code-editor"
                     value={textContent}
-                    onChange={(e) => setTextContent(e.target.value)}
+                    onChange={(event) => setTextContent(event.target.value)}
                     spellCheck="false"
-                    rows={20}
+                    rows={24}
                     placeholder="# Week 1&#10;- Task 1"
                 />
             </div>
-        </div>
+        </main>
     )
 }

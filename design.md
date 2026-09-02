@@ -1,101 +1,161 @@
-# Design System — Traqo Soft Workspace
+# Design System — Traqo Document Workspace
 
-## Product and objective
+## Product intent
 
-Traqo is a single-user learning roadmap workspace used for repeated, often long sessions. The redesign must make progress feel tactile and motivating while keeping imported plans, forms, task lists, and navigation immediately understandable.
+Traqo turns unstructured plans into living, editable roadmaps. It must work equally well for an 18-day study plan, a Docker checklist, a reading queue, or a long personal project. The interface should feel like a focused document editor: content first, tools revealed in context, and no repeated controls that the user did not ask for.
+
+The visual language is inspired by the clarity and progressive disclosure of modern document tools. It is not a pixel copy of Notion.
 
 ## Direction
 
-- Primary style: Neumorphism / Soft UI (70%).
-- Secondary influence: Flat Design 2.0 utility UI (30%).
-- Reason: progress controls, roadmap cards, and workspace navigation benefit from tactile depth. Dense roadmap content requires flatter, higher-contrast treatment.
-- Main risk: low contrast and ambiguous controls. Every actionable surface therefore retains text/icon cues, strong focus rings, and adequate contrast.
-- Strongest areas: shell, library cards, progress meters, source tabs, primary actions, empty states.
-- Restrained areas: task rows, long-form text, editor inputs, table of contents, destructive actions.
+- Style: flat monochrome utility UI.
+- Palette: white, warm neutral grays, and near-black only for primary product UI.
+- Density: 8/10. Long roadmaps must remain scannable without becoming cramped.
+- Motion: 2/10. Opacity and background transitions only.
+- Elevation: borders and surface contrast; shadows are limited to floating menus.
+- Content hierarchy: roadmap → section → task → optional blocks.
 
 ## Principles
 
-1. Soft depth communicates hierarchy, not decoration.
-2. Raised means actionable; inset means selected, entered, or progressed.
-3. Progress is the dominant brand signal.
-4. Dense work remains flatter than overview screens.
-5. Every state works without relying on shadow or color alone.
+1. A task starts simple. Notes, counters, bookmarks, revision tracking, and other blocks appear only after insertion.
+2. Imported structure remains structure. Headings become sections, table rows become tasks, supporting cells become properties or blocks, and prose/callouts do not become fake tasks.
+3. Large roadmaps use progressive disclosure: index first, one focused section when needed, search always available.
+4. Controls stay near the content they affect and expose text labels in menus.
+5. The same interaction model applies to roadmaps and ordinary task lists.
 
 ## Foundations
 
-- Background/surface: `#E8EDF3`; elevated: `#EEF3F8`; inset: `#DFE5EC`.
-- Text: `#243140`; secondary text: `#5D6A7A`; border: `rgba(113,130,151,.24)`.
-- Brand: burnt orange `#C94E27`; hover orange `#AD3D1C`; secondary cyan `#19758A`.
-- Semantic: success `#328A68`, warning `#A56A1D`, error `#B94C5B`, information `#376F9F`.
-- Contrast target: WCAG 2.2 AA; shadows never carry meaning alone.
-- Display/interface font: Space Grotesk. Metadata: Fira Code.
-- Display: `clamp(2.5rem, 6vw, 5rem)`; H2 `2rem`; H3 `1.3rem`; body `1rem`; label `.82rem`.
-- Base spacing: 4px. Scale: 4, 8, 12, 16, 24, 32, 40, 56, 72.
-- Content max: 1240px. Grid: 12 columns; 20px desktop gutters, 12px mobile.
-- Breakpoints: 360, 768, 1024, 1440px.
-- Radii: 10px controls, 16px panels, 22px feature cards. Pills limited to status.
+### Color
 
-## Depth
+- Canvas: `#FFFFFF`
+- Sidebar/subtle surface: `#F7F7F5`
+- Hover/selected surface: `#F1F1EF`
+- Strong text: `#191919`
+- Secondary text: `#5F5E5B`
+- Tertiary text: `#787774`
+- Hairline: `#E9E9E7`
+- Strong border: `#D3D3D1`
+- Inverse action: `#191919` on `#FFFFFF`
+- Destructive text: `#B42318`; destructive surface: `#FFF4F2`
+- Success: `#287A49`; never the only completion indicator.
 
-- Raised: `10px 10px 24px #c6ccd4, -10px -10px 24px #fff`.
-- Low raised: `5px 5px 12px #c8ced6, -5px -5px 12px #fff`.
-- Inset: `inset 4px 4px 9px #cbd1d9, inset -4px -4px 9px #fff`.
-- Pressed/selected: inset depth plus visible text/icon change.
-- Large-area blur and backdrop filters are forbidden.
+No blue or orange UI accents. Product controls and brand artwork stay monochrome.
 
-## Components and states
+### Brand mark
 
-- Primary button: orange raised surface; darker hover; inset pressed state; white label.
-- Secondary button: background-colored raised surface; orange hover text; inset active state.
-- Inputs: inset surface, persistent label, orange focus ring, textual validation.
-- Cards: raised 22px surface; selected cards add orange outline; progress remains inset.
-- Navigation: raised rail with inset active item and icon-plus-label.
-- Task rows: low raised default, visible checkbox, flatter done state.
-- Disabled: reduced opacity, no lift. Loading: label plus spinner. Error/destructive: textual label plus semantic color.
-- Icons: Lucide outline, 1.75–2px stroke, 16/20/24px. Icon-only actions require accessible names and 42px targets.
+- The Traqo mark preserves the original `T + terminal dot` idea as flat black vector geometry inside a single rounded document frame.
+- Use the SVG mark with the `Traqo` text wordmark; do not rasterize, add gradients, shadows, or dimensional effects.
+- The navigation link provides the accessible brand name. The mark is decorative in that lockup and must not be announced twice.
+- Minimum rendered mark size: 24px. Keep at least 25% of the mark width as clear space around standalone uses.
 
-## Motion
+### Typography
 
-- Fast 160ms; standard 240ms; ease-out.
-- Hover lift is maximum 2px. Pressed state moves inward without bounce.
-- Page transition uses subtle opacity only. No floating loops or decorative particles.
-- `prefers-reduced-motion` disables nonessential animation.
+- Interface and document text: `Inter`, `ui-sans-serif`, `-apple-system`, `BlinkMacSystemFont`, `"Segoe UI"`, sans-serif.
+- Code and counters: `"SFMono-Regular"`, Consolas, monospace.
+- Page title: `clamp(1.75rem, 4vw, 2.5rem)`, 700, `-0.035em`.
+- Section title: `1.05rem`, 650.
+- Body/task: `0.95rem`, 400–550.
+- Metadata: `0.75rem`, 500.
+- No remote font dependency.
+
+### Geometry and spacing
+
+- Base spacing: 4px; scale: 4, 8, 12, 16, 20, 24, 32, 48.
+- Document width: 900px; wide roadmap shell: 1280px.
+- Controls: 32–36px desktop; 42px minimum touch target on coarse pointers.
+- Radius: 4px controls, 6px menus, 8px major panels.
+- Borders: 1px. Do not simulate depth with multiple shadows.
+
+## Shell
+
+- Desktop navigation is a quiet top bar with logo, Library, New, and local-state metadata.
+- Page content begins immediately below the bar and uses a centered document column.
+- Roadmap contents live in a flat side rail on wide screens and an accessible drawer on small screens.
+- The active route uses text weight and a subtle neutral fill, not a moving indicator.
+
+## Components
+
+### Buttons
+
+- Primary: near-black fill, white text, 6px radius.
+- Secondary: white or transparent fill, 1px border, near-black text.
+- Quiet: transparent, neutral hover background.
+- Destructive: explicit label when space permits; red text plus icon.
+- Pressed/selected state must include text, icon, or `aria-pressed`; color alone is insufficient.
+
+### Inputs
+
+- Persistent visible labels on forms.
+- White background, 1px hairline, 6px radius.
+- Focus: 2px near-black outline with 2px offset.
+- Errors appear next to the field and in an `aria-live` region where appropriate.
+
+### Roadmap and task rows
+
+- Sections use a compact heading, task count, and progress text.
+- A task row contains checkbox, editable title, a quiet `+` block button, and overflow actions.
+- Task blocks stack beneath the title and indent to the title column.
+- Imported properties render as compact labeled rows, not a wall of pills.
+- Completion de-emphasizes the row but preserves readable text contrast.
+
+### Block inserter
+
+- The `+` button is visible on keyboard focus and pointer hover; on touch it remains visible.
+- The menu lists icon, name, and concise purpose for Note, Counter, Bookmark, Revision, and Revisit.
+- Inserted blocks are independently editable and removable.
+- Revision and revisit are optional blocks. They are never synthesized for every task.
+- Escape closes the menu; focus returns to the trigger.
+
+### Import
+
+- File and paste are simple source tabs in one document panel.
+- The PDF flow states what will be preserved: sections, task tables, notes, links, counters, and revision metadata.
+- Import progress and parsing errors are visible, truthful states.
+- Ambiguous prose stays attached as a note rather than becoming a task.
+
+## Responsive rules
+
+- 360–767px: single document column, full-width actions, contents drawer, task actions never hover-only.
+- 768–1023px: compact navigation, two-column library only when cards remain at least 280px wide.
+- 1024px+: contents rail plus document; focused roadmap section stays within readable width.
+- No horizontal page scroll. Wide imported metadata wraps or scrolls inside its own region.
+
+## Motion and feedback
+
+- Timing: 120–180ms, ease-out.
+- Allowed: opacity, background color, small menu scale from `0.98` to `1`.
+- Forbidden: page slides, bouncing navigation, hover lift, floating decoration, looping motion.
+- Respect `prefers-reduced-motion: reduce`.
+- Every async mutation shows pending or failure feedback and does not silently discard edits.
 
 ## Accessibility
 
-- Focus ring: 3px translucent orange with 3px offset.
-- Minimum touch target: 42px.
-- Semantic HTML, persistent form labels, readable errors, keyboard-operable drawers and menus.
-- Color, inset shadow, or elevation is never the sole state cue.
-
-## Responsive and page rules
-
-- Library: three columns desktop, two tablet, one mobile. Hero action becomes full-width on mobile.
-- Import: centered raised workspace panel; inset fields; source control remains two columns.
-- Roadmap: contents sidebar is raised on desktop and a drawer on mobile; tasks use restrained depth.
-- Editor: dense controls stay semi-flat; destructive controls use explicit labels where space allows.
-- Navigation: brand/status first row and full-width navigation rail below at tablet/mobile.
-- Modals/drawers: raised panels with overlay; actions remain visible without scrolling when practical.
+- WCAG 2.2 AA text contrast.
+- Logical heading order and semantic lists/buttons/forms.
+- Visible `:focus-visible` outline on every interactive element.
+- Icon-only controls have names; menus are keyboard-operable.
+- Checkboxes and block counters expose their state in accessible text.
+- 200% zoom and 360px layout retain all primary actions.
 
 ## Forbidden patterns
 
-Low-contrast text, unlabeled embossed controls, shadow-only selected states, glass blur, large gradients, glowing borders, excessive pills, decorative particles, hover-only critical actions, and deeply embossed long-form content.
+Neumorphic shadows, gradients, glass blur, decorative particles, oversized marketing heroes, blue/orange control accents, excessive pills, duplicate revision/revisit controls, hover-only critical actions, placeholder-only form labels, and arbitrary animation.
 
-## Implementation
+## Implementation map
 
-- Tokens and shared styles: `frontend/src/index.css`.
-- Components/pages: `frontend/src/components` and `frontend/src/pages`.
-- Icons: Lucide React. Motion: Framer Motion, restrained.
-- Tests: `npm run lint`, `npm run build`, and browser QA at 360, 768, 1024, 1440px.
+- Global tokens/layout: `frontend/src/index.css`
+- Navigation: `frontend/src/components/Navbar.jsx`
+- Task block UI: `frontend/src/components/TaskBlocks.jsx`
+- Library/import/editor: `frontend/src/pages`
+- Roadmap scale and document interactions: `frontend/src/pages/RoadmapView.jsx`
+- Parser/API persistence: `backend`
 
-## QA checklist
+## Acceptance checklist
 
-- [x] Four target widths visually tested
-- [x] Keyboard navigation and focus tested
-- [x] Contrast and zoom checked
-- [x] Form, loading, empty, success, and error states checked
-- [x] Reduced motion supported
-- [x] Lint and build pass after implementation
-- [x] Console clean
-- [x] No horizontal overflow
-- [x] Existing behavior preserved
+- [x] Supplied five-page PDF imports as meaningful sections and tasks.
+- [x] Callouts, prose, and repository layout do not become garbage tasks.
+- [x] Revision/revisit controls appear only when imported or inserted.
+- [x] Note, Counter, Bookmark, Revision, and Revisit blocks persist after reload.
+- [x] Large roadmap overview, focus, search, and navigation remain functional.
+- [x] Library, import, edit, and roadmap views share one monochrome system.
+- [x] Keyboard, 360/768/1024/1440px, reduced-motion, console, lint, build, and backend tests pass.

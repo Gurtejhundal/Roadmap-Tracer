@@ -1,8 +1,7 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import axios from 'axios'
-import { Plus, Calendar, ArrowRight, Trash2, RefreshCw, AlertCircle } from 'lucide-react'
+import { AlertCircle, ArrowRight, FileText, Plus, RefreshCw, Trash2 } from 'lucide-react'
 
 import { API_URL, LOCAL_USER_ID } from '../config'
 
@@ -15,11 +14,11 @@ export default function Home() {
         try {
             setError('')
             const res = await axios.get(`${API_URL}/roadmaps`, {
-                headers: { 'X-Local-User-Id': LOCAL_USER_ID }
+                headers: { 'X-Local-User-Id': LOCAL_USER_ID },
             })
             setRoadmaps(Array.isArray(res.data) ? res.data : [])
-        } catch (error) {
-            console.error("Failed to fetch roadmaps", error)
+        } catch (fetchError) {
+            console.error('Failed to fetch roadmaps', fetchError)
             setError('Could not load your roadmaps. Check that the local server is running.')
         } finally {
             setLoading(false)
@@ -30,31 +29,32 @@ export default function Home() {
         fetchRoadmaps()
     }, [fetchRoadmaps])
 
-    const deleteRoadmap = async (e, id) => {
-        e.preventDefault() // Prevent navigation
-        e.stopPropagation()
-        if (!window.confirm("Are you sure you want to delete this roadmap?")) return
+    const deleteRoadmap = async (event, id, name) => {
+        event.preventDefault()
+        event.stopPropagation()
+        if (!window.confirm(`Delete “${name}”? This cannot be undone.`)) return
 
         try {
             await axios.delete(`${API_URL}/roadmaps/${id}`, {
-                headers: { 'X-Local-User-Id': LOCAL_USER_ID }
+                headers: { 'X-Local-User-Id': LOCAL_USER_ID },
             })
-            setRoadmaps(currentRoadmaps => currentRoadmaps.filter(r => r.id !== id))
-        } catch (error) {
-            console.error("Failed to delete roadmap", error)
+            setRoadmaps((current) => current.filter((roadmap) => roadmap.id !== id))
+        } catch (deleteError) {
+            console.error('Failed to delete roadmap', deleteError)
+            setError('The roadmap could not be deleted. Try again.')
         }
     }
 
     return (
-        <div className="home-page">
-            <div className="hero-section">
+        <main className="home-page">
+            <header className="hero-section">
                 <div>
-                    <span className="eyebrow">Your learning library</span>
-                    <h2 className="section-title">Keep moving forward.</h2>
-                    <p>Turn big plans into clear, trackable steps. Pick up where you left off or start something new.</p>
+                    <span className="eyebrow">Workspace</span>
+                    <h1 className="section-title">Your roadmaps</h1>
+                    <p>Plans, checklists, study schedules, and project work in one quiet place.</p>
                 </div>
-                <Link to="/import" className="btn-primary hero-action"><Plus size={18} /> New roadmap</Link>
-            </div>
+                <Link to="/import" className="btn-primary hero-action"><Plus size={16} /> New</Link>
+            </header>
 
             {loading ? (
                 <div className="loading-state" role="status" aria-live="polite">
@@ -62,80 +62,64 @@ export default function Home() {
                     <strong>Opening your workspace</strong>
                     <span>Loading roadmaps and progress…</span>
                 </div>
-            ) : error ? (
+            ) : error && roadmaps.length === 0 ? (
                 <div className="feedback-state error-state" role="alert">
-                    <AlertCircle size={24} />
+                    <AlertCircle size={21} />
                     <div><strong>Roadmaps unavailable</strong><p>{error}</p></div>
-                    <button className="btn-secondary" onClick={fetchRoadmaps}><RefreshCw size={16} /> Retry</button>
+                    <button className="btn-secondary" onClick={fetchRoadmaps}><RefreshCw size={15} /> Retry</button>
                 </div>
             ) : (
-                <div className="grid-container">
-                    {/* New Roadmap Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="roadmap-card-wrapper"
-                    >
-                        <Link to="/import" className="roadmap-card-link">
-                            <div className="roadmap-card create-card">
-                                <span className="create-icon"><Plus size={22} /></span>
-                                <span>Create a roadmap</span>
-                                <small>Paste a plan or upload a document</small>
-                            </div>
-                        </Link>
-                    </motion.div>
+                <section className="library-section" aria-labelledby="library-heading">
+                    <div className="library-heading-row">
+                        <h2 id="library-heading">All documents</h2>
+                        <span>{roadmaps.length} {roadmaps.length === 1 ? 'roadmap' : 'roadmaps'}</span>
+                    </div>
 
-                    {roadmaps.map((roadmap, index) => {
-                        const totalTasks = roadmap.total_tasks || 0
-                        const completedTasks = roadmap.completed_tasks || 0
-                        const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+                    {error && <div className="inline-error" role="alert">{error}</div>}
 
-                        return (
-                        <motion.div
-                            key={roadmap.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: (index + 1) * 0.1 }}
-                            className="roadmap-card-wrapper"
-                        >
-                            <Link to={`/roadmap/${roadmap.id}`} className="roadmap-card-link">
-                                <div className="roadmap-card">
-                                    <div className="card-header">
-                                        <h3>{roadmap.name}</h3>
+                    {roadmaps.length === 0 ? (
+                        <div className="empty-library">
+                            <FileText size={24} aria-hidden="true" />
+                            <div><strong>No roadmaps yet</strong><p>Import a PDF, paste a plan, or start a simple task list.</p></div>
+                            <Link to="/import" className="btn-secondary"><Plus size={16} /> Create your first roadmap</Link>
+                        </div>
+                    ) : (
+                        <div className="roadmap-list">
+                            {roadmaps.map((roadmap) => {
+                                const totalTasks = roadmap.total_tasks || 0
+                                const completedTasks = roadmap.completed_tasks || 0
+                                const percentage = totalTasks > 0
+                                    ? Math.round((completedTasks / totalTasks) * 100)
+                                    : 0
+
+                                return (
+                                    <div className="roadmap-row" key={roadmap.id}>
+                                        <Link to={`/roadmap/${roadmap.id}`} className="roadmap-row-link" aria-label={`Open ${roadmap.name}`} />
+                                        <span className="document-icon" aria-hidden="true"><FileText size={17} /></span>
+                                        <span className="roadmap-row-main">
+                                            <strong>{roadmap.name}</strong>
+                                            <small>{completedTasks} of {totalTasks} tasks complete · {new Date(roadmap.created_at).toLocaleDateString()}</small>
+                                        </span>
+                                        <span className="roadmap-row-progress" aria-label={`${percentage}% complete`}>
+                                            <span><i style={{ width: `${percentage}%` }} /></span>
+                                            <small>{percentage}%</small>
+                                        </span>
                                         <button
                                             type="button"
                                             className="icon-btn delete-btn"
                                             aria-label={`Delete ${roadmap.name}`}
-                                            onClick={(e) => deleteRoadmap(e, roadmap.id)}
+                                            onClick={(event) => deleteRoadmap(event, roadmap.id, roadmap.name)}
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={15} />
                                         </button>
+                                        <ArrowRight className="arrow" size={16} aria-hidden="true" />
                                     </div>
-
-                                    <div className="progress-section">
-                                        <div className="progress-info">
-                                            <span className="progress-text">{completedTasks}/{totalTasks} tasks</span>
-                                            <span className="progress-percentage">{percentage}%</span>
-                                        </div>
-                                        <div className="progress-bar">
-                                            <div className="progress-fill" style={{ width: `${percentage}%` }} />
-                                        </div>
-                                    </div>
-
-                                    <div className="card-footer">
-                                        <div className="date">
-                                            <Calendar size={14} style={{ marginRight: '6px' }} />
-                                            {new Date(roadmap.created_at).toLocaleDateString()}
-                                        </div>
-                                        <ArrowRight className="arrow" size={18} />
-                                    </div>
-                                </div>
-                            </Link>
-                        </motion.div>
-                        )
-                    })}
-                </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </section>
             )}
-        </div>
+        </main>
     )
 }
