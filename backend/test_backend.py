@@ -21,6 +21,21 @@ def test_read_main():
     assert response.json() == {"message": "Welcome to Roadmap Tracer API"}
 
 
+def test_read_main_through_vercel_api_prefix():
+    response = client.get("/api/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to Roadmap Tracer API"}
+
+    roadmaps = client.get("/api/roadmaps", headers=headers)
+    assert roadmaps.status_code == 200
+    assert isinstance(roadmaps.json(), list)
+
+
+def test_api_prefix_does_not_match_similar_paths():
+    response = client.get("/apis")
+    assert response.status_code == 404
+
+
 def test_create_roadmap_from_text():
     name = f"Text Roadmap {time.time()}"
     text = "Week 1: Foundations\n- Learn Python basics\n- Build a small script"

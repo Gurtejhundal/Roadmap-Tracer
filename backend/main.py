@@ -54,6 +54,27 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Roadmap Tracer API", lifespan=lifespan)
 
 
+class ApiPrefixMiddleware:
+    """Expose the same API under /api when Vercel Services preserves the prefix."""
+
+    def __init__(self, application):
+        self.application = application
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") in {"http", "websocket"}:
+            path = scope.get("path", "")
+            if path == "/api" or path.startswith("/api/"):
+                scope = dict(scope)
+                scope["path"] = path[4:] or "/"
+                raw_path = scope.get("raw_path")
+                if isinstance(raw_path, bytes):
+                    scope["raw_path"] = raw_path[4:] or b"/"
+        await self.application(scope, receive, send)
+
+
+app.add_middleware(ApiPrefixMiddleware)
+
+
 def _allowed_cors_origins() -> List[str]:
     origins = {
         "http://127.0.0.1:5173",
